@@ -1,0 +1,263 @@
+{
+  "name": "Sub-RAG & Q&A",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        -48
+      ],
+      "id": "46f3036a-634d-43aa-8ac0-4189d6ed01e5",
+      "name": "When Executed by Another Workflow",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.studentMsg }}",
+        "options": {
+          "systemMessage": "Bạn là trợ lý học tập chuyên nghiệp cho sinh viên Khoa Khoa học Máy tính. Nhiệm vụ của bạn là:\nNếu sinh viên yêu cầu tóm tắt, hãy đọc các kiến thức từ Vector Store và trình bày ngắn gọn, súc tích theo từng ý chính.\n\nNếu sinh viên hỏi đáp, hãy dựa trên giáo trình để trả lời.\nLuôn trả lời bằng tiếng Việt. Nếu thông tin không có trong tài liệu, hãy lịch sự thông báo cho sinh viên."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        -80
+      ],
+      "id": "0895f132-f941-4860-b921-b16f45934140",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        224
+      ],
+      "id": "5a5396ba-b759-448e-b467-bcbbea862169",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "KmakYF0S2lkUfuAf",
+          "name": "OpenRouter account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "nAEvL2yvZye8bFaW",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/nAEvL2yvZye8bFaW",
+          "cachedResultName": "Response Sub-workflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        -80
+      ],
+      "id": "bbb54f8a-f2cf-40ff-9801-fd3f04923e5f",
+      "name": "Call 'Response Sub-workflow'"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        320
+      ],
+      "id": "a04473dc-6246-4a91-b12e-e8d46ce962e0",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        96
+      ],
+      "id": "f2749a3f-849c-4a43-a6eb-ca4824c504c8",
+      "name": "Answer questions with a vector store"
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "giao-trinh-slide-tai-lieu",
+          "mode": "list",
+          "cachedResultName": "giao-trinh-slide-tai-lieu"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        320
+      ],
+      "id": "c836e962-de53-4131-a13b-354a67e965f0",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "L3vt4TVsKyH1LSLX",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        368
+      ],
+      "id": "2bcdd864-b16e-4626-916f-134a66a914de",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "ksic5B5QxLvNdawV",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "chatId": 8662711873,
+          "studentMsg": "tóm tắt"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Call 'Response Sub-workflow'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer questions with a vector store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a8a22bd0-d483-434b-9581-01cb3b85c53b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d800b9d61e1192d5da59ee52f944c41fcd2ecf75dd5a1357c2cc02e1692ca5c8"
+  },
+  "id": "L1VZEQwgbitqqoUM",
+  "tags": []
+}
