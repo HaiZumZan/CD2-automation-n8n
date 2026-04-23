@@ -1,0 +1,510 @@
+{
+  "name": "VKU KMS - Study with AI (Flashcard & Feynman)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "study-ai",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -624,
+        -96
+      ],
+      "id": "c311a9d2-b6fe-4e81-9e32-89110eacc038",
+      "name": "Webhook",
+      "webhookId": "44270999-550e-4879-8f53-221f907f525d"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.task }}",
+                    "rightValue": "flashcard",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "34e8098b-30a4-439e-991b-ed876f02d15f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a69d25dc-75e4-44e1-95af-12a924c33869",
+                    "leftValue": "={{ $json.body.task }}",
+                    "rightValue": "feynman",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -96
+      ],
+      "id": "ee00671c-0770-4e3f-9405-a807cb137bae",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:3b",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -448
+      ],
+      "id": "0230398d-2a32-4d7c-9fbc-ab69e09fb41c",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Gvd3OMbOawEH7X4Z",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "file_name",
+                "value": "={{ $('Webhook').item.json.body.file_name }}"
+              },
+              {
+                "name": "owner_username",
+                "value": "={{ $('Webhook').item.json.body.owner_username }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        -320
+      ],
+      "id": "22e4b248-0e61-4caa-9cd5-b8f4620a998b",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "INlkcL8iP8vbZK1Y",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -128
+      ],
+      "id": "f0a72dbe-f080-45a5-b74d-9ba38ac5635c",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Gvd3OMbOawEH7X4Z",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Hãy tạo flashcard từ tài liệu được cung cấp.",
+        "options": {
+          "systemPromptTemplate": "Bạn là một công cụ tạo flashcard. Đọc nội dung tài liệu dưới đây và tạo ra đúng 10 flashcard.\n\nCONTEXT:\n{context}\n\nQUY TẮC BẮT BUỘC:\n1. Chỉ trả về JSON array thuần túy, không có markdown, không có giải thích.\n2. Bắt đầu bằng [ và kết thúc bằng ]\n3. Mỗi item có đúng 2 key: \"term\" và \"definition\"\n4. \"definition\" viết bằng tiếng Việt, ngắn gọn 2-3 câu.\n\n[{\"term\": \"...\",\"definition\": \"...\"},{\"term\": \"...\",\"definition\": \"...\"}]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.7,
+      "position": [
+        96,
+        -672
+      ],
+      "id": "3db42e19-934f-4567-a6de-aaaba9de3284",
+      "name": "Question and Answer Chain"
+    },
+    {
+      "parameters": {
+        "topK": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -512
+      ],
+      "id": "a48e25c7-de2b-400c-bb10-33e197c51895",
+      "name": "Vector Store Retriever"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || $input.first().json.text || '';\n\nconst match = raw.match(/\\[[\\s\\S]*\\]/);\nif (!match) {\n  return [{ json: { error: 'Không parse được JSON', raw } }];\n}\n\nconst flashcards = JSON.parse(match[0]);\nreturn [{ json: { status: 'success', mode: 'flashcard', data: flashcards } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -688
+      ],
+      "id": "07a69c4e-c36b-4f9c-be24-7559c031536e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        656,
+        -32
+      ],
+      "id": "f09e6852-203e-4660-a81f-ff9ecbb96912",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.body.student_message }}",
+        "options": {
+          "systemMessage": "Bạn là Giáo sư - một giáo viên đại học chuyên đánh giá mức độ hiểu bài của sinh viên theo Kỹ thuật Feynman.\n\nNHIỆM VỤ CỦA BẠN:\nBạn sẽ nhận được:\n1. TÀI LIỆU THAM KHẢO (từ hệ thống RAG): Nội dung kiến thức chuẩn của bài học.\n2. CÂU TRẢ LỜI CỦA SINH VIÊN: Sinh viên giải thích lại khái niệm bằng ngôn ngữ của họ.\n\nQUY TRÌNH ĐÁNH GIÁ (bắt buộc theo thứ tự):\n\n### 1. Nhận xét tổng quan\nNhận xét 2-3 câu về cách tiếp cận của sinh viên: họ đã hiểu đúng hướng chưa?\n\n### 2. ✅ Điểm đúng\nLiệt kê những ý sinh viên giải thích CHÍNH XÁC (đối chiếu với tài liệu).\n\n### 3. ❌ Điểm sai / thiếu\nChỉ rõ những khái niệm bị hiểu sai hoặc bị bỏ qua. Giải thích TẠI SAO nó sai.\n\n### 4. 📚 Bổ sung kiến thức\nCung cấp phần kiến thức còn thiếu, giải thích bằng ngôn ngữ dễ hiểu.\n\n### 5. 🎯 Điểm số: X/10\nCho điểm từ 0-10 dựa trên:\n- Độ chính xác (50%)\n- Độ đầy đủ (30%)\n- Khả năng giải thích đơn giản (20%)\n\n### 6. 💡 Gợi ý cải thiện\n1 câu hỏi gợi mở để sinh viên suy nghĩ tiếp.\n\nQUAN TRỌNG:\n- Trả lời BẰNG TIẾNG VIỆT.\n- Dùng định dạng Markdown như trên.\n- Giọng điệu: nghiêm túc nhưng khuyến khích, KHÔNG chê bai.\n- KHÔNG bịa thêm kiến thức ngoài tài liệu được cung cấp."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -128,
+        80
+      ],
+      "id": "d0dc7655-9de6-46c9-b71c-ecc701f9b591",
+      "name": "AI Agent Feynman"
+    },
+    {
+      "parameters": {
+        "model": "gemma3:4b",
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        320
+      ],
+      "id": "34539c84-d394-42b6-9d1b-58faeb08c1c7",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Gvd3OMbOawEH7X4Z",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Truy xuất kiến thức từ tài liệu học tập của sinh viên để đối chiếu câu trả lời",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_documents",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "file_name",
+                "value": "={{ $('Webhook').item.json.body.file_name }}"
+              },
+              {
+                "name": "owner_username",
+                "value": "={{ $('Webhook').item.json.body.owner_username }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        336
+      ],
+      "id": "a93f738f-5e76-4942-9462-0c329f0770f1",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "INlkcL8iP8vbZK1Y",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        144,
+        544
+      ],
+      "id": "23b2a605-ee1d-40c2-91b5-4c986d9191b7",
+      "name": "Embeddings Ollama1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Gvd3OMbOawEH7X4Z",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        416
+      ],
+      "id": "963b06fc-66ff-4aa2-a7df-829e31d8c7e2",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent Feynman",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question and Answer Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Feynman",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Feynman",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Feynman": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Feynman",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "27b3e305-4a9a-4791-b443-53c8792e1046",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "aSam9JXwAvGWyg5Y",
+  "tags": [
+    {
+      "updatedAt": "2026-04-21T04:30:35.264Z",
+      "createdAt": "2026-04-21T04:30:35.264Z",
+      "id": "VlutuRzckqS05gaA",
+      "name": "VKU KMS"
+    },
+    {
+      "updatedAt": "2026-04-21T04:30:35.281Z",
+      "createdAt": "2026-04-21T04:30:35.281Z",
+      "id": "jYqHA9OzGJ5aM8gd",
+      "name": "Study AI"
+    }
+  ]
+}
