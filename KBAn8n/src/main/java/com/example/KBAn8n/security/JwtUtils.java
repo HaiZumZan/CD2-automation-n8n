@@ -6,6 +6,8 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 @Component
 public class JwtUtils {
     private final String jwtSecret = "your-very-secure-secret-key-make-it-long-enough";

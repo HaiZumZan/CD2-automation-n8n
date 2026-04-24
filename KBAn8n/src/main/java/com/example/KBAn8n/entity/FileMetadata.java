@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "file_metadata") // BẮT BUỘC: Để khớp với tên bảng Supabase
+@Table(name = "file_metadata")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,9 +21,22 @@ public class FileMetadata {
     @Column(name = "owner_username")
     private String ownerUsername;
 
-    @Column(name = "is_global") // BẮT BUỘC: Khớp cột is_global trong DB
+    @Column(name = "is_global")
     private boolean isGlobal;
 
     @Column(name = "upload_date")
     private LocalDateTime uploadDate;
+
+    // ✨ THÊM DÒNG NÀY ĐỂ HẾT LỖI ĐỎ ✨
+    @Column(name = "file_path")
+    private String filePath;
+
+    @Column(name = "faculty")
+    private String faculty;
+
+    @Column(name = "major")
+    private String major;
+
+    @Column(name = "subject")
+    private String subject; // Mô
 }

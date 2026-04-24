@@ -1,0 +1,971 @@
+{
+  "name": "VKU KMS - Complete Automation (Phase 2)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/upload-document",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        1280
+      ],
+      "webhookId": "22f40ba4-63c8-4fb4-a6fd-94fc01d752e6",
+      "id": "285c3111-a56a-4583-8bc4-db57d958a00b"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.task }}",
+                    "rightValue": "upload",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.task }}",
+                    "rightValue": "chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.task }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Switch Task",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -656,
+        1280
+      ],
+      "id": "55db8682-059b-4020-aa9f-ee88dc7cff12"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file0",
+        "options": {}
+      },
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        976
+      ],
+      "id": "1cc9e6db-adbb-47ef-be3d-213cd65ba46b"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là một chuyên gia phân tích dữ liệu văn bản. Hãy đọc kỹ nội dung sau và thực hiện 2 nhiệm vụ:\n1. Viết một đoạn tóm tắt ngắn gọn nhất có thể (dưới 50 chữ).\n2. Rút xuất ra đúng 3 từ khóa quan trọng nhất, ngăn cách bằng dấu phẩy.\n\nChỉ trả về đúng định dạng sau, không giải thích thêm:\nTóm tắt: [nội dung tóm tắt]\nTừ khóa: [từ khóa 1, từ khóa 2, từ khóa 3]\n\nNội dung cần phân tích:\n{{ $json.text }}"
+      },
+      "name": "AI Auto-Tagging",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        -144,
+        976
+      ],
+      "id": "9a8fe943-ee56-4ebf-aa8d-35619ea61709"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "value": "=AI Phân tích: {{ $json.text }}\n\nNội dung gốc: {{ $('Extract from File').item.json.text }}",
+              "type": "string"
+            },
+            {
+              "name": "owner_username",
+              "value": "={{ $('Webhook1').item.json.query.owner_username }}",
+              "type": "string"
+            },
+            {
+              "name": "is_global",
+              "value": "={{ $('Webhook1').item.json.query.is_global === 'true' }}",
+              "type": "boolean"
+            },
+            {
+              "name": "file_name",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.file_name) }}",
+              "type": "string"
+            },
+            {
+              "name": "faculty",
+              "value": "={{ $('Webhook1').item.json.query.faculty }}",
+              "type": "string"
+            },
+            {
+              "name": "major",
+              "value": "={{ $('Webhook1').item.json.query.major }}",
+              "type": "string"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $('Webhook1').item.json.query.subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Edit Fields Upload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        976
+      ],
+      "id": "15002cbf-8dad-4481-af98-fc38209cc1b1"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "owner_username",
+                "value": "={{ $json.owner_username }}"
+              },
+              {
+                "name": "is_global",
+                "value": "={{ $json.is_global }}"
+              },
+              {
+                "name": "file_name",
+                "value": "={{ $json.file_name }}"
+              },
+              {
+                "name": "faculty",
+                "value": "={{ $json.faculty }}"
+              },
+              {
+                "name": "major",
+                "value": "={{ $json.major }}"
+              },
+              {
+                "name": "subject",
+                "value": "={{ $json.subject }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        976
+      ],
+      "id": "e20cd34e-cf66-4018-9958-88aa42147710"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "name": "Supabase Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        976
+      ],
+      "id": "e9f54455-df44-4ef1-8f7b-e986b2576c3b",
+      "credentials": {
+        "supabaseApi": {
+          "id": "E9fqGUySdxvU7XGu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "name": "Embeddings Ollama1",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        608,
+        1184
+      ],
+      "id": "9b084b03-f354-4ac5-b0ff-0455df582b9b",
+      "credentials": {
+        "ollamaApi": {
+          "id": "mir1IwK8vGX1Ot0N",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM documents WHERE metadata->>'file_name' = '{{ $node[\"Webhook1\"].json.query.file_name }}' AND metadata->>'owner_username' = '{{ $node[\"Webhook1\"].json.query.owner_username }}';",
+        "options": {}
+      },
+      "name": "Execute SQL Delete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -400,
+        1280
+      ],
+      "id": "094e8146-8add-438b-815a-157283878445",
+      "credentials": {
+        "postgres": {
+          "id": "sxgP51nR9YPxhsG8",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "value": "=Đã xóa file {{ $node[\"Webhook1\"].json.query.file_name }} thành công",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Edit Fields Delete",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        1376
+      ],
+      "id": "31369bf5-8c1d-40ae-be68-8f0740dd9f16"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond Webhook Delete",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        112,
+        1280
+      ],
+      "id": "fb61e35b-5760-4fa9-ba04-79786853539b"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "studentMsg",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.question || '') }}",
+              "type": "string"
+            },
+            {
+              "name": "is_global",
+              "value": "={{ $('Webhook1').item.json.query.is_global === 'true' }}",
+              "type": "boolean"
+            },
+            {
+              "name": "faculty",
+              "value": "={{ $('Webhook1').item.json.query.faculty }}",
+              "type": "string"
+            },
+            {
+              "name": "major",
+              "value": "={{ $('Webhook1').item.json.query.major }}",
+              "type": "string"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $('Webhook1').item.json.query.subject }}",
+              "type": "string"
+            },
+            {
+              "name": "owner_username",
+              "value": "={{ $('Webhook1').item.json.query.owner_username }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Parse Chat Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        1584
+      ],
+      "id": "84a932b6-2f07-463d-9ad7-78e415d28160"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {},
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_global }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {},
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_global }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Switch Global",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        1584
+      ],
+      "id": "8abc58d8-49b6-4aab-9ba5-a56e10a89669"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.studentMsg }}",
+        "options": {
+          "systemMessage": "Bạn là AI Navigator của Thư viện số VKU. Nhiệm vụ của bạn là hướng dẫn sinh viên tìm đúng tài liệu.\n1. LUÔN LUÔN dùng tool 'Tai_lieu_chung' để tìm kiếm.\n2. Câu trả lời phải tập trung vào việc: Kiến thức này nằm ở đâu? (Tên file, môn học, vị trí slide).\n3. Dựa trên kiến thức chuyên môn nếu dữ liệu bị thiếu.\n4. Tuyệt đối không trả lời các câu hỏi ngoài lề giáo trình."
+        }
+      },
+      "name": "AI Navigator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        160,
+        1488
+      ],
+      "id": "a61dff6c-3cb7-4e74-92b1-c724ff1bf79f"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "name": "Gemini Model (Navigator)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        160,
+        1680
+      ],
+      "id": "3fa97e2e-957f-4ac7-9ebd-5fb2bd6f2a09",
+      "credentials": {
+        "openRouterApi": {
+          "id": "rxeqPFM2eZJKm4Df",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "student_web_session"
+      },
+      "name": "Memory (Navigator)",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        1680
+      ],
+      "id": "5c60565b-c778-4d94-8e16-795baf9017af"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Dùng tool này để tìm kiếm vị trí tài liệu chung của toàn trường.",
+        "tableName": {
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "is_global",
+                "value": "={{ true }}"
+              },
+              {
+                "name": "faculty",
+                "value": "={{ $('Parse Chat Data').item.json.faculty }}"
+              },
+              {
+                "name": "major",
+                "value": "={{ $('Parse Chat Data').item.json.major }}"
+              },
+              {
+                "name": "subject",
+                "value": "={{ $('Parse Chat Data').item.json.subject }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Tai_lieu_chung",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        1696
+      ],
+      "id": "4575e9b0-1215-42d2-8378-a2252b45a3a7",
+      "credentials": {
+        "supabaseApi": {
+          "id": "E9fqGUySdxvU7XGu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "name": "Embeddings Ollama2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1840
+      ],
+      "id": "cd421e9e-96b6-4499-9d06-f8b4c8764e02",
+      "credentials": {
+        "ollamaApi": {
+          "id": "mir1IwK8vGX1Ot0N",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.studentMsg }}",
+        "options": {
+          "systemMessage": "Bạn là AI Tutor cá nhân. Nhiệm vụ của bạn là hỗ trợ sinh viên ôn thi từ tài liệu họ tải lên.\n1. LUÔN dùng tool 'Tai_Lieu_Ca_Nhan' (Lọc theo owner_username).\n2. Nếu sinh viên yêu cầu 'Tạo đề thi', hãy tạo 5 câu hỏi trắc nghiệm kèm đáp án dựa trên tài liệu.\n3. Nếu yêu cầu 'Vẽ sơ đồ', hãy xuất mã code Mermaid (graph TD) bao trong block code ```mermaid\n4. Dựa trên kiến thức chuyên môn nếu trong tài liệu chưa có đủ ý."
+        }
+      },
+      "name": "AI Tutor",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        160,
+        1984
+      ],
+      "id": "0bb2c493-a5df-4b70-a64f-5e8043214af2"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "name": "Gemini Model (Tutor)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        160,
+        2176
+      ],
+      "id": "e1aae8b4-67df-4742-a3ee-59b05ef830fc",
+      "credentials": {
+        "openRouterApi": {
+          "id": "rxeqPFM2eZJKm4Df",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "student_web_session"
+      },
+      "name": "Memory (Tutor)",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        2176
+      ],
+      "id": "55d45fd3-566e-46e5-bcd8-ff9ba7d5ab8c"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Dùng tool này để tra cứu tài liệu cá nhân của sinh viên.",
+        "tableName": {
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "is_global",
+                "value": "={{ false }}"
+              },
+              {
+                "name": "owner_username",
+                "value": "={{ $('Parse Chat Data').item.json.owner_username }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Tai_Lieu_Ca_Nhan",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        2176
+      ],
+      "id": "3d52543a-10a0-4968-b5d6-c55160c26470",
+      "credentials": {
+        "supabaseApi": {
+          "id": "E9fqGUySdxvU7XGu",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "name": "Embeddings Ollama3",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        464,
+        2384
+      ],
+      "id": "256897ce-64a5-46bc-9b5a-e6d06555eafe",
+      "credentials": {
+        "ollamaApi": {
+          "id": "mir1IwK8vGX1Ot0N",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond Webhook Chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        752,
+        1728
+      ],
+      "id": "d80f01c0-ebd5-4701-9911-74c7bc7e26cd"
+    },
+    {
+      "parameters": {
+        "model": "smollm:135m",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1168
+      ],
+      "id": "b90db5fc-3f13-493e-bb1a-bfbd9d4f9f2a",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "mir1IwK8vGX1Ot0N",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Switch Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Task": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Chat Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute SQL Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Auto-Tagging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Auto-Tagging": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute SQL Delete": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Delete": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Chat Data": {
+      "main": [
+        [
+          {
+            "node": "Switch Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Global": {
+      "main": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Navigator": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model (Navigator)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory (Navigator)": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tai_lieu_chung": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Tai_lieu_chung",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Tutor": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model (Tutor)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Tutor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory (Tutor)": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Tutor",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tai_Lieu_Ca_Nhan": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Tutor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Tai_Lieu_Ca_Nhan",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Auto-Tagging",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "963f8828-6c65-4ab5-b438-e5c81d505b06",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b576c326004d152f6b6059d3ce7108a7333e5eb59c1db3a2ef29ad36b7d38b7"
+  },
+  "id": "meu8dCFdxnaVUPMg",
+  "tags": []
+}
