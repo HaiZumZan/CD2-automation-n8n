@@ -1,8 +1,12 @@
 package com.example.KBAn8n.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.*; // Đảm bảo bạn dùng jakarta cho Spring Boot 3
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor // Cực kỳ quan trọng để Jackson hoạt động
+@AllArgsConstructor
 @Entity
 @Table(name = "users")
 @Data
