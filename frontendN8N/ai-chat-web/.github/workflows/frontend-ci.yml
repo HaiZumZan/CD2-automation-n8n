@@ -1,37 +1,50 @@
 name: React Frontend CI Pipeline
 
-# 1. KHI NÀO ROBOT CHẠY?
-# Robot sẽ tự động chạy mỗi khi có ai đó Push code lên nhánh 'main'
 on:
   push:
     branches: [ "main" ]
+    # Chỉ chạy CI Frontend khi có sửa đổi trong thư mục ai-chat-web
+    paths:
+      - 'frontendN8N/ai-chat-web/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'frontendN8N/ai-chat-web/**'
 
-# 2. ROBOT SẼ LÀM GÌ?
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest # Thuê một máy ảo Linux miễn phí của GitHub
+    runs-on: ubuntu-latest # Thuê máy ảo Linux của GitHub
+
+    # Chỉ định thư mục làm việc mặc định cho Frontend
+    defaults:
+      run:
+        working-directory: ./frontendN8N/ai-chat-web
 
     steps:
-    # Bước 2.1: Lấy code mới nhất từ GitHub về máy ảo
+    # Bước 1: Lấy code mới nhất từ GitHub
     - name: Tải Source Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    # Bước 2.2: Cài đặt Node.js trên máy ảo
-    - name: Cài đặt Node.js 18
-      uses: actions/setup-node@v3
+    # Bước 2: Cài đặt Node.js môi trường
+    - name: Cài đặt Node.js
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm' # Tự động lưu cache để lần sau chạy nhanh hơn
+        node-version: '20' # Phiên bản Node.js (bạn có thể đổi thành 18 nếu dự án dùng 18)
+        cache: 'npm'
+        cache-dependency-path: './frontendN8N/ai-chat-web/package-lock.json' # Trỏ tới đúng file lock
 
-    # Bước 2.3: Cài đặt các thư viện (Dependencies)
+    # Bước 3: Cài đặt thư viện (Dependencies)
     - name: Cài đặt thư viện (npm install)
-      run: npm install
-      
-    # Bước 2.4: Chạy lệnh Build (Đóng gói ứng dụng web thành HTML/CSS/JS)
-    - name: Đóng gói với Vite
+      run: npm ci # Dùng 'npm ci' thay vì 'npm install' để CI chạy ổn định và chuẩn xác hơn với package-lock.json
+
+    # Bước 4: Kiểm thử (Nếu dự án của bạn có cấu hình chạy test)
+    # Nếu chưa có test, bạn có thể comment lại bước này
+    # - name: Chạy Unit Test
+    #   run: npm test
+
+    # Bước 5: Build ứng dụng React thành các file tĩnh
+    - name: Build ứng dụng (npm run build)
       run: npm run build
       
-    # Ghi chú: Nếu sau này có Server thật, bạn sẽ thêm lệnh Deploy (CD) ở đây
-    # run: scp -r dist/* user@ip_server:/path/to/deploy/frontend
+    # Ghi chú: Sau bước này, bạn sẽ có thư mục 'dist' hoặc 'build'.
+    # Nếu muốn deploy (ví dụ: lên Vercel, Netlify, hoặc Server riêng), bạn sẽ thêm cấu hình ở đây.
