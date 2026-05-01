@@ -49,4 +49,21 @@ public class AuthController {
 
         return ResponseEntity.status(401).body("Sai mật khẩu");
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("Chưa đăng nhập");
+        }
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        java.util.Map<String, Object> userInfo = new java.util.HashMap<>();
+        userInfo.put("id", user.getId());
+        userInfo.put("username", user.getUsername());
+        userInfo.put("role", user.getRole());
+        userInfo.put("enabled", user.isEnabled());
+        
+        return ResponseEntity.ok(userInfo);
+    }
 }

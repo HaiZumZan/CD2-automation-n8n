@@ -1,19 +1,19 @@
 package com.example.KBAn8n.entity;
 
-import jakarta.persistence.*; // Đảm bảo bạn dùng jakarta cho Spring Boot 3
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor // Cực kỳ quan trọng để Jackson hoạt động
+@NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "users")
 @Data
 public class User {
 
-    @Id // ĐÁNH DẤU ĐÂY LÀ KHÓA CHÍNH
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // TỰ ĐỘNG TĂNG ID TRONG MYSQL (AUTO_INCREMENT)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -23,4 +23,10 @@ public class User {
     private String password;
 
     private String role;
+
+    // 🌟 THÊM TRƯỜNG NÀY: Để Admin có thể Khóa / Mở khóa tài khoản
+    // Mặc định khi tạo tài khoản mới là true (được phép đăng nhập)
+    // Sửa lại đoạn cấu hình cột này
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean enabled = true;
 }

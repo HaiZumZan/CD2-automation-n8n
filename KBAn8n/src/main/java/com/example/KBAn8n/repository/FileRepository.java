@@ -13,4 +13,6 @@ public interface FileRepository extends JpaRepository<FileMetadata, Long> {
 
     // 2. Dành cho Không gian cá nhân: Lấy tài liệu riêng của một sinh viên
     List<FileMetadata> findByOwnerUsernameAndIsGlobalFalse(String username);
+    List<FileMetadata> findByOwnerUsernameOrIsGlobalTrue(String username);
+
 }

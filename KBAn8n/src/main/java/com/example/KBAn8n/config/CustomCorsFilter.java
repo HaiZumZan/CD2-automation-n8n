@@ -24,7 +24,8 @@ public class CustomCorsFilter implements Filter {
 
         String origin = request.getHeader("Origin");
         if (origin != null && (origin.equals("http://180.93.138.111") || origin.equals("http://localhost:5173"))) {
-            // Giữ lại localhost:5173 để sau này bạn vẫn có thể debug dưới máy cá nhân nếu muốn            response.setHeader("Access-Control-Allow-Origin", origin);
+            // Giữ lại localhost:5173 để sau này bạn vẫn có thể debug dưới máy cá nhân nếu muốn
+            response.setHeader("Access-Control-Allow-Origin", origin);
         } else {
             response.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Mặc định
         }

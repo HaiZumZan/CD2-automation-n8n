@@ -39,4 +39,9 @@ public class FileMetadata {
 
     @Column(name = "subject")
     private String subject; // Mô
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(columnDefinition = "TEXT")
+    private String keywords; // Thêm vào để thoải mái lưu trữ từ khóa dài
 }

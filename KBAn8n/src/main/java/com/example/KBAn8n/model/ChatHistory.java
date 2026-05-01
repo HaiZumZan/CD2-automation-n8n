@@ -12,6 +12,10 @@ public class ChatHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 🌟 THÊM TRƯỜNG NÀY: Để Admin biết ai là người đặt câu hỏi
+    @Column(nullable = false)
+    private String username;
+
     @Column(columnDefinition = "TEXT")
     private String studentMessage;
 

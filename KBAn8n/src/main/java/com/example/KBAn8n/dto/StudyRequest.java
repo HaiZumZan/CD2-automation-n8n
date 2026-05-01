@@ -1,8 +1,8 @@
 package com.example.KBAn8n.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -10,4 +10,5 @@ import lombok.AllArgsConstructor;
 public class StudyRequest {
     private String file_name;
     private String student_message; // null nếu là flashcard
+    private String persona;
 }

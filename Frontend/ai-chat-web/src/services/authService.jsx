@@ -14,3 +14,8 @@ export const logoutUser = () => {
     localStorage.removeItem('accessToken');
     window.location.href = '/login';
 };
+
+export const getCurrentUser = async () => {
+    const response = await axiosClient.get(ENDPOINTS.AUTH_ME);
+    return response.data;
+};

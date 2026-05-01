@@ -3,7 +3,11 @@ package com.example.KBAn8n.controller;
 import com.example.KBAn8n.model.ChatHistory;
 import com.example.KBAn8n.repository.ChatRepository;
 import com.example.KBAn8n.service.ChatService;
+import com.example.KBAn8n.service.N8nService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -12,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin(origins = "*") // Quan trọng: Để React gọi vào không bị lỗi CORS
+@CrossOrigin(origins = "*") // Giữ nguyên để React gọi vào không bị lỗi CORS
 public class ChatController {
 
     @Autowired
@@ -21,26 +25,44 @@ public class ChatController {
     @Autowired
     private ChatRepository chatRepository;
 
+    @Autowired
+    private N8nService n8nService; // Thêm N8nService vào để gọi luồng RAG mới
+
+    // Đã sửa /ask thành chuẩn xác thực Token và nhận thêm dữ liệu
     @PostMapping("/ask")
-    public Map<String, String> chatWithAI(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> chatWithAI(@RequestBody Map<String, String> payload,
+                                        @AuthenticationPrincipal UserDetails userDetails) {
+
+        // 1. Kiểm tra Token đăng nhập
+        if (userDetails == null) return ResponseEntity.status(401).body("Token lỗi!");
+        String username = userDetails.getUsername(); // Lấy username thật
+
+        // 2. Lấy dữ liệu câu hỏi và bộ lọc từ React
         String userMsg = payload.get("message");
+        boolean isGlobal = Boolean.parseBoolean(payload.getOrDefault("isGlobal", "false"));
+        String faculty = payload.getOrDefault("faculty", "");
+        String major = payload.getOrDefault("major", "");
+        String subject = payload.getOrDefault("subject", "");
 
-        // 1. Xác định người dùng (Để test bạn có thể để "hoa")
-        // Sau này khi có JWT, bạn sẽ lấy username từ SecurityContextHolder
-        String username = "hoa";
+        // 3. Gọi sang n8n (Sử dụng luồng Chat mới)
+        String aiAnswer = n8nService.sendChatRequest(userMsg, username, isGlobal, faculty, major, subject);
 
-        // 2. Gọi Service với ĐỦ 2 THAM SỐ
-        String aiAnswer = chatService.askN8n(userMsg, username);
+        // --- KÍCH HOẠT: LƯU LỊCH SỬ CHAT VÀO DATABASE ---
+        ChatHistory history = new ChatHistory();
+        history.setUsername(username);
+        history.setStudentMessage(userMsg); // Gọi đúng tên biến của Hoa
+        history.setAiResponse(aiAnswer);
+        chatRepository.save(history);
 
-        // 3. Trả về kết quả
+        // 4. Trả kết quả về cho React
         Map<String, String> response = new HashMap<>();
         response.put("answer", aiAnswer);
-        return response;
+        return ResponseEntity.ok(response);
     }
+
+    // Giữ nguyên API lấy lịch sử cũ của Hoa
     @GetMapping("/history")
     public List<ChatHistory> getChatHistory() {
-        // Trình tự: Lấy toàn bộ tin nhắn từ Repository
-        // Bạn có thể dùng findAll() hoặc viết Query để lấy theo thời gian/User
         return chatRepository.findAll();
     }
 }

@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/files/webhook/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // ... phần còn lại giữ nguyên
