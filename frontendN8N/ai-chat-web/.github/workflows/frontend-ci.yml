@@ -1,0 +1,37 @@
+name: React Frontend CI Pipeline
+
+# 1. KHI NÀO ROBOT CHẠY?
+# Robot sẽ tự động chạy mỗi khi có ai đó Push code lên nhánh 'main'
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# 2. ROBOT SẼ LÀM GÌ?
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Thuê một máy ảo Linux miễn phí của GitHub
+
+    steps:
+    # Bước 2.1: Lấy code mới nhất từ GitHub về máy ảo
+    - name: Tải Source Code
+      uses: actions/checkout@v3
+
+    # Bước 2.2: Cài đặt Node.js trên máy ảo
+    - name: Cài đặt Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm' # Tự động lưu cache để lần sau chạy nhanh hơn
+
+    # Bước 2.3: Cài đặt các thư viện (Dependencies)
+    - name: Cài đặt thư viện (npm install)
+      run: npm install
+      
+    # Bước 2.4: Chạy lệnh Build (Đóng gói ứng dụng web thành HTML/CSS/JS)
+    - name: Đóng gói với Vite
+      run: npm run build
+      
+    # Ghi chú: Nếu sau này có Server thật, bạn sẽ thêm lệnh Deploy (CD) ở đây
+    # run: scp -r dist/* user@ip_server:/path/to/deploy/frontend
