@@ -111,6 +111,16 @@ const ChatBubble = ({ message, onImageClick }) => {
         <div className={`chat-bubble ${message.sender}`}>
             <div className="avatar">{message.sender === 'ai' ? 'AI' : 'Me'}</div>
             <div className="text-content">
+                {message.image && (
+                    <div style={{ marginBottom: message.text ? '10px' : '0' }}>
+                        <img 
+                            src={message.image} 
+                            alt="Uploaded" 
+                            style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '250px', objectFit: 'contain', cursor: 'pointer' }} 
+                            onClick={() => onImageClick && onImageClick(message.image)}
+                        />
+                    </div>
+                )}
                 {renderContent(message.text)}
             </div>
         </div>

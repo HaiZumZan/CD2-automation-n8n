@@ -10,6 +10,7 @@ const ChatScreen = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
     const [enlargedImage, setEnlargedImage] = useState(null);
     const [isDragging, setIsDragging] = useState(false); // Thêm state cho drag and drop
     const scrollRef = useRef();
@@ -34,21 +35,15 @@ const ChatScreen = () => {
         if (token) fetchHistory();
     }, []);
 
-    // Xử lý Inbound (OCR)
+    // Xử lý đính kèm ảnh (thay vì OCR ngay lập tức)
     const handleImageOCR = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        setLoading(true);
-        try {
-            const result = await Tesseract.recognize(file, 'vie+eng');
-            setInput(prev => prev + (prev ? '\n' : '') + result.data.text.trim());
-        } catch (err) {
-            alert("Lỗi trích xuất chữ: " + err.message);
-        } finally {
-            setLoading(false);
-            e.target.value = ''; // reset file input
-        }
+        const reader = new FileReader();
+        reader.onloadend = () => setSelectedImage(reader.result);
+        reader.readAsDataURL(file);
+        e.target.value = ''; // reset file input
     };
 
     // --- KÉO THẢ ẢNH (DRAG & DROP) ---
@@ -69,26 +64,24 @@ const ChatScreen = () => {
         const file = e.dataTransfer.files[0];
         if (!file || !file.type.startsWith('image/')) return;
         
-        setLoading(true);
-        try {
-            const result = await Tesseract.recognize(file, 'vie+eng');
-            setInput(prev => prev + (prev ? '\n' : '') + result.data.text.trim());
-        } catch (err) {
-            alert("Lỗi trích xuất chữ: " + err.message);
-        } finally {
-            setLoading(false);
-        }
+        const reader = new FileReader();
+        reader.onloadend = () => setSelectedImage(reader.result);
+        reader.readAsDataURL(file);
     };
 
     const handleSend = async () => {
-        if (!input.trim() || loading) return;
-        setMessages(prev => [...prev, { text: input, sender: 'student' }]);
-        const currentInput = input;
+        if ((!input.trim() && !selectedImage) || loading) return;
+        
+        const currentInput = input.trim();
+        const imageToSend = selectedImage;
+        
+        setMessages(prev => [...prev, { text: currentInput, sender: 'student', image: imageToSend }]);
         setInput('');
+        setSelectedImage(null);
         setLoading(true);
 
         try {
-            const res = await askAI(currentInput);
+            const res = await askAI(currentInput, false, "", "", "", imageToSend);
             setMessages(prev => [...prev, { text: res.answer, sender: 'ai' }]);
         } catch (err) {
             setMessages(prev => [...prev, { text: "Lỗi kết nối bộ não AI!", sender: 'ai' }]);
@@ -165,10 +158,23 @@ const ChatScreen = () => {
                 </div>
             )}
 
-            <footer className="input-container">
-                <div className="input-wrapper">
+            <footer className="input-container" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                {selectedImage && (
+                    <div style={{ position: "relative", width: "fit-content", marginBottom: "10px", marginLeft: "10px" }}>
+                        <img src={selectedImage} alt="Preview" style={{ height: "60px", borderRadius: "8px", border: "2px solid #555" }} />
+                        <button
+                            onClick={() => setSelectedImage(null)}
+                            style={{
+                                position: "absolute", top: "-8px", right: "-8px", background: "#ff4757", color: "white",
+                                border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer",
+                                fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center"
+                            }}
+                        >✕</button>
+                    </div>
+                )}
+                <div className="input-wrapper" style={{ width: '100%' }}>
                     <FilePicker />
-                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#4a90e2', padding: '0 10px' }} title="Quét chữ từ hình ảnh (OCR)">
+                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#4a90e2', padding: '0 10px' }} title="Đính kèm ảnh/Chụp màn hình">
                         <Camera size={20} />
                         <input type="file" accept="image/*" hidden onChange={handleImageOCR} disabled={loading} />
                     </label>
@@ -177,8 +183,9 @@ const ChatScreen = () => {
                         placeholder="Hỏi AI Study Assistant..."
                         onChange={(e)=>setInput(e.target.value)} 
                         onKeyDown={(e)=>e.key==='Enter' && handleSend()} 
+                        disabled={loading}
                     />
-                    <button onClick={handleSend} disabled={!input.trim()}><Send size={20}/></button>
+                    <button onClick={handleSend} disabled={(!input.trim() && !selectedImage) || loading}><Send size={20}/></button>
                 </div>
             </footer>
         </div>
