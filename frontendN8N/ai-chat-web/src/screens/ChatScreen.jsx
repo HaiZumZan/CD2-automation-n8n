@@ -12,6 +12,7 @@ const ChatScreen = () => {
     const [attachedFile, setAttachedFile] = useState(null);
     const [enlargedImage, setEnlargedImage] = useState(null);
     const [isDragging, setIsDragging] = useState(false); // Thêm state cho drag and drop
+    const dragCounter = useRef(0);
     const scrollRef = useRef();
     
     // Sử dụng logout từ Context
@@ -55,21 +56,40 @@ const ChatScreen = () => {
     };
 
     // --- KÉO THẢ FILE (DRAG & DROP) ---
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current += 1;
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            setIsDragging(true);
+        }
+    };
+
     const handleDragOver = (e) => {
         e.preventDefault();
-        setIsDragging(true);
+        e.stopPropagation();
     };
 
     const handleDragLeave = (e) => {
         e.preventDefault();
-        setIsDragging(false);
+        e.stopPropagation();
+        dragCounter.current -= 1;
+        if (dragCounter.current === 0) {
+            setIsDragging(false);
+        }
     };
 
     const handleDrop = async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragging(false);
-        const file = e.dataTransfer.files[0];
-        processAttachedFile(file);
+        dragCounter.current = 0;
+        
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            processAttachedFile(file);
+            e.dataTransfer.clearData();
+        }
     };
 
     // --- DÁN FILE (PASTE) ---
@@ -111,6 +131,7 @@ const ChatScreen = () => {
         <div 
             className="app-container" 
             style={{ flexDirection: 'column', position: 'relative' }}
+            onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -177,7 +198,14 @@ const ChatScreen = () => {
                 </div>
             )}
 
-            <footer className="input-container" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+            <footer 
+                className="input-container" 
+                style={{ flexDirection: 'column', alignItems: 'flex-start' }}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
                 {attachedFile && (
                     <div style={{ 
                         position: "relative", width: "fit-content", marginBottom: "10px", marginLeft: "10px",
