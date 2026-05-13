@@ -11,6 +11,8 @@ const AIChatPage = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Tự động cuộn xuống tin nhắn mới nhất
   const messagesEndRef = useRef(null);
@@ -19,19 +21,21 @@ const AIChatPage = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedImage) return;
 
     const userMsg = input.trim();
+    const imageToSend = selectedImage;
     setInput("");
+    setSelectedImage(null);
 
     // 1. Thêm tin nhắn của user vào màn hình
-    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+    setMessages((prev) => [...prev, { role: "user", content: userMsg, image: imageToSend }]);
     setIsLoading(true);
 
     try {
-      // 2. Gửi xuống Backend (Tạm thời để isGlobal = true để test AI Navigator)
+      // 2. Gửi xuống Backend kèm theo ảnh (nếu có)
       // Nếu muốn tìm trong file cá nhân, đổi isGlobal = false
-      const aiResponse = await askAI(userMsg, true, "", "", "");
+      const aiResponse = await askAI(userMsg, true, "", "", "", imageToSend);
 
       // 3. Thêm câu trả lời của AI vào màn hình
       setMessages((prev) => [...prev, { role: "ai", content: aiResponse }]);
@@ -113,6 +117,11 @@ const AIChatPage = () => {
                 whiteSpace: "pre-wrap", // Giúp hiển thị đúng các dấu xuống dòng của AI
               }}
             >
+              {msg.image && (
+                <div style={{ marginBottom: msg.content ? "10px" : "0" }}>
+                  <img src={msg.image} alt="User upload" style={{ maxWidth: "100%", borderRadius: "8px", maxHeight: "250px", objectFit: "contain" }} />
+                </div>
+              )}
               {msg.content}
             </div>
           </div>
@@ -145,18 +154,73 @@ const AIChatPage = () => {
           backgroundColor: "#2d2d3a",
           borderTop: "1px solid #444",
           display: "flex",
+          flexDirection: "column",
           gap: "10px",
         }}
       >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) =>
-            e.key === "Enter" && !isLoading && handleSendMessage()
-          }
-          disabled={isLoading}
-          placeholder="Nhập câu hỏi của bạn (VD: Tìm cho tôi tài liệu môn Lập trình Web?)"
+        {/* Preview ảnh thu nhỏ ngay trên khung nhập */}
+        {selectedImage && (
+          <div style={{ position: "relative", width: "fit-content", marginLeft: "55px" }}>
+            <img src={selectedImage} alt="Preview" style={{ height: "70px", borderRadius: "8px", border: "2px solid #555" }} />
+            <button
+              onClick={() => setSelectedImage(null)}
+              style={{
+                position: "absolute", top: "-8px", right: "-8px", background: "#ff4757", color: "white",
+                border: "none", borderRadius: "50%", width: "22px", height: "22px", cursor: "pointer",
+                fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {/* Nút Upload Ảnh */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              backgroundColor: "transparent",
+              color: "#aaa",
+              border: "1px solid #444",
+              padding: "10px 15px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "0.3s"
+            }}
+            title="Đính kèm ảnh (Chụp màn hình slide/bài tập)"
+          >
+            🖼️
+          </button>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => setSelectedImage(reader.result);
+                reader.readAsDataURL(file);
+              }
+              e.target.value = null; // reset input để có thể up lại ảnh cũ
+            }}
+          />
+
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) =>
+              e.key === "Enter" && !isLoading && handleSendMessage()
+            }
+            disabled={isLoading}
+            placeholder="Nhập câu hỏi hoặc dán ảnh vào đây..."
           style={{
             flex: 1,
             padding: "15px",
@@ -185,6 +249,7 @@ const AIChatPage = () => {
         >
           Gửi
         </button>
+        </div>
       </div>
     </div>
   );

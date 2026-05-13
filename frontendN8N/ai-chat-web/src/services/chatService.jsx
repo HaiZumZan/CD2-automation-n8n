@@ -8,6 +8,7 @@ export const askAI = async (
   faculty = "",
   major = "",
   subject = "",
+  imageBase64 = null
 ) => {
   const res = await axiosClient.post(ENDPOINTS.CHAT_ASK, {
     message,
@@ -15,6 +16,7 @@ export const askAI = async (
     faculty,
     major,
     subject,
+    imageBase64: imageBase64 || "", // Gửi ảnh base64 nếu có
   });
 
   // Trả về trực tiếp chuỗi câu trả lời để giao diện dễ dùng
