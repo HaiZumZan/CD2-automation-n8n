@@ -120,7 +120,7 @@ export const getFilePreviewUrl = async (id) => {
   return window.URL.createObjectURL(blob);
 };
 // --- API CHO TRỢ LÝ AI (PHÂN LUỒNG NGỮ CẢNH) ---
-export const sendChatRequest = async (question, chatContext, ownerUsername) => {
+export const sendChatRequest = async (question, chatContext, ownerUsername, fileBase64 = null) => {
   const token = localStorage.getItem("accessToken");
 
   // ĐÃ SỬA: Đổi từ /api/n8n-webhook thành /api/files/n8n-webhook
@@ -128,7 +128,7 @@ export const sendChatRequest = async (question, chatContext, ownerUsername) => {
 
   const res = await axios.post(
     url,
-    {},
+    { fileBase64: fileBase64 || "" }, // Thêm fileBase64 vào payload
     {
       headers: { Authorization: `Bearer ${token}` },
     },

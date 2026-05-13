@@ -19,9 +19,9 @@ import {
   Send,
   Bot,
   Camera,
-  Loader2
+  Loader2,
+  FileText
 } from "lucide-react";
-import Tesseract from 'tesseract.js';
 import html2pdf from 'html2pdf.js';
 
 const StudentDashboard = () => {
@@ -42,7 +42,7 @@ const StudentDashboard = () => {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
-  const [isReadingImage, setIsReadingImage] = useState(false);
+  const [attachedFile, setAttachedFile] = useState(null);
   const [isDraggingChat, setIsDraggingChat] = useState(false); // Thêm state cho kéo thả khung chat
   const messagesEndRef = useRef(null);
 
@@ -173,19 +173,24 @@ const StudentDashboard = () => {
   // --- HÀM GỬI TIN NHẮN PERSONAL ---
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    if ((!chatInput.trim() && !attachedFile) || isChatting) return;
 
-    const newMsg = { sender: "user", text: chatInput };
+    const currentInput = chatInput.trim();
+    const fileToSend = attachedFile;
+
+    const newMsg = { sender: "user", text: currentInput, file: fileToSend };
     setMessages((prev) => [...prev, newMsg]);
     setChatInput("");
+    setAttachedFile(null);
     setIsChatting(true);
 
     try {
       // Gắn nhãn 'personal' để n8n biết đang ở Không gian cá nhân
       const res = await sendChatRequest(
-        newMsg.text,
+        currentInput,
         "personal",
         user?.username || "unknown",
+        fileToSend ? fileToSend.data : null
       );
       const aiResponse =
         typeof res === "string"
@@ -202,24 +207,27 @@ const StudentDashboard = () => {
     }
   };
 
-  // OCR
-  const handleImageOCR = async (e) => {
-    const selected = e.target.files[0];
-    if (!selected) return;
-
-    setIsReadingImage(true);
-    try {
-        const result = await Tesseract.recognize(selected, 'vie+eng');
-        setChatInput(prev => prev + (prev ? '\n' : '') + result.data.text.trim());
-    } catch (err) {
-        alert("Lỗi đọc ảnh: " + err.message);
-    } finally {
-        setIsReadingImage(false);
-        e.target.value = '';
-    }
+  // --- XỬ LÝ ĐÍNH KÈM FILE CHUNG ---
+  const processAttachedFile = (file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+          setAttachedFile({
+              data: reader.result,
+              name: file.name,
+              type: file.type,
+              isImage: file.type.startsWith('image/')
+          });
+      };
+      reader.readAsDataURL(file);
   };
 
-  // --- KÉO THẢ ẢNH VÀO KHUNG CHAT ---
+  const handleFileSelect = (e) => {
+      processAttachedFile(e.target.files[0]);
+      e.target.value = '';
+  };
+
+  // --- KÉO THẢ VÀ DÁN FILE VÀO KHUNG CHAT ---
   const handleChatDragOver = (e) => {
       e.preventDefault();
       setIsDraggingChat(true);
@@ -233,18 +241,22 @@ const StudentDashboard = () => {
   const handleChatDrop = async (e) => {
       e.preventDefault();
       setIsDraggingChat(false);
-      
       const file = e.dataTransfer.files[0];
-      if (!file || !file.type.startsWith('image/')) return;
-      
-      setIsReadingImage(true);
-      try {
-          const result = await Tesseract.recognize(file, 'vie+eng');
-          setChatInput(prev => prev + (prev ? '\n' : '') + result.data.text.trim());
-      } catch (err) {
-          alert("Lỗi đọc ảnh: " + err.message);
-      } finally {
-          setIsReadingImage(false);
+      processAttachedFile(file);
+  };
+
+  const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+          if (items[i].kind === 'file') {
+              const file = items[i].getAsFile();
+              if (file) {
+                  processAttachedFile(file);
+                  e.preventDefault();
+                  break;
+              }
+          }
       }
   };
 
@@ -543,7 +555,7 @@ const StudentDashboard = () => {
               border: '3px dashed #50fa7b', borderRadius: '15px',
               backdropFilter: 'blur(2px)'
           }}>
-              <h3 style={{ color: '#50fa7b', pointerEvents: 'none' }}>📸 Thả ảnh vào đây</h3>
+              <h3 style={{ color: '#50fa7b', pointerEvents: 'none' }}>📸 Thả file/ảnh vào đây</h3>
           </div>
         )}
         <div
@@ -580,6 +592,21 @@ const StudentDashboard = () => {
                   lineHeight: "1.5",
                 }}
               >
+                {msg.file && (
+                    <div style={{ marginBottom: msg.text ? '10px' : '0' }}>
+                        {msg.file.isImage ? (
+                            <img 
+                                src={msg.file.data} alt="Uploaded" 
+                                style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '250px', objectFit: 'contain' }} 
+                            />
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid #555' }}>
+                                <span style={{ fontSize: '20px' }}>📄</span>
+                                <span style={{ fontSize: '13px', color: '#e0e0e0', wordBreak: 'break-all' }}>{msg.file.name}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
                 {renderMessageContent(msg.text)}
               </div>
             </div>
@@ -597,56 +624,87 @@ const StudentDashboard = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <form
-          onSubmit={handleSendMessage}
-          style={{
-            display: "flex",
-            padding: "10px",
-            borderTop: "1px solid #444",
-            backgroundColor: "#252530",
-            borderBottomLeftRadius: "15px",
-            borderBottomRightRadius: "15px",
-          }}
-        >
-          <label style={{ cursor: 'pointer', padding: '10px', color: '#50fa7b', display: 'flex', alignItems: 'center' }} title="Chụp ảnh slide/sách">
-            {isReadingImage ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />}
-            <input type="file" accept="image/*" hidden onChange={handleImageOCR} disabled={isChatting || isReadingImage} />
-          </label>
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Yêu cầu AI Tutor tạo câu hỏi trắc nghiệm, tóm tắt..."
-            style={{
-              flex: 1,
-              backgroundColor: "transparent",
-              border: "none",
-              color: "#fff",
-              outline: "none",
-              padding: "10px",
-            }}
-            disabled={isChatting}
-          />
-          <button
-            type="submit"
-            disabled={isChatting || !chatInput.trim()}
-            style={{
-              backgroundColor: "#50fa7b",
-              color: "#000",
-              border: "none",
-              borderRadius: "50%",
-              width: "40px",
-              height: "40px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              cursor: "pointer",
-              opacity: isChatting || !chatInput.trim() ? 0.5 : 1,
-            }}
-          >
-            <Send size={18} />
-          </button>
-        </form>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+            {attachedFile && (
+                <div style={{ 
+                    position: "relative", width: "fit-content", marginBottom: "5px", marginLeft: "10px", marginTop: "10px",
+                    padding: attachedFile.isImage ? "0" : "10px",
+                    backgroundColor: attachedFile.isImage ? "transparent" : "#2d2d3a",
+                    borderRadius: "8px", border: "1px solid #555",
+                    display: "flex", alignItems: "center", gap: "10px", alignSelf: 'flex-start'
+                }}>
+                    {attachedFile.isImage ? (
+                        <img src={attachedFile.data} alt="Preview" style={{ height: "50px", borderRadius: "6px", objectFit: "contain" }} />
+                    ) : (
+                        <>
+                            <FileText size={20} color="#4a90e2" />
+                            <span style={{ color: "#e0e0e0", fontSize: "12px", maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {attachedFile.name}
+                            </span>
+                        </>
+                    )}
+                    <button
+                        onClick={() => setAttachedFile(null)}
+                        style={{
+                            position: "absolute", top: "-5px", right: "-5px", background: "#ff4757", color: "white",
+                            border: "none", borderRadius: "50%", width: "16px", height: "16px", cursor: "pointer",
+                            fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center"
+                        }}
+                    >✕</button>
+                </div>
+            )}
+            <form
+              onSubmit={handleSendMessage}
+              style={{
+                display: "flex",
+                padding: "10px",
+                borderTop: "1px solid #444",
+                backgroundColor: "#252530",
+                borderBottomLeftRadius: "15px",
+                borderBottomRightRadius: "15px",
+              }}
+            >
+              <label style={{ cursor: 'pointer', padding: '10px', color: '#50fa7b', display: 'flex', alignItems: 'center' }} title="Đính kèm tài liệu/ảnh">
+                <Camera size={18} />
+                <input type="file" hidden onChange={handleFileSelect} disabled={isChatting} />
+              </label>
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onPaste={handlePaste}
+                placeholder="Ctrl+V dán ảnh hoặc nhập yêu cầu..."
+                style={{
+                  flex: 1,
+                  backgroundColor: "transparent",
+                  border: "none",
+                  color: "#fff",
+                  outline: "none",
+                  padding: "10px",
+                }}
+                disabled={isChatting}
+              />
+              <button
+                type="submit"
+                disabled={isChatting || (!chatInput.trim() && !attachedFile)}
+                style={{
+                  backgroundColor: "#50fa7b",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "40px",
+                  height: "40px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  opacity: isChatting || (!chatInput.trim() && !attachedFile) ? 0.5 : 1,
+                }}
+              >
+                <Send size={18} />
+              </button>
+            </form>
+        </div>
       </div>
     </div>
   );
