@@ -43,9 +43,10 @@ public class ChatController {
         String faculty = payload.getOrDefault("faculty", "");
         String major = payload.getOrDefault("major", "");
         String subject = payload.getOrDefault("subject", "");
+        String fileBase64 = payload.getOrDefault("fileBase64", "");
 
-        // 3. Gọi sang n8n (Sử dụng luồng Chat mới)
-        String aiAnswer = n8nService.sendChatRequest(userMsg, username, isGlobal, faculty, major, subject);
+        // 3. Gọi sang n8n (Sử dụng luồng Chat mới, truyền kèm fileBase64)
+        String aiAnswer = n8nService.sendChatRequest(userMsg, username, isGlobal, faculty, major, subject, fileBase64);
 
         // --- KÍCH HOẠT: LƯU LỊCH SỬ CHAT VÀO DATABASE ---
         ChatHistory history = new ChatHistory();

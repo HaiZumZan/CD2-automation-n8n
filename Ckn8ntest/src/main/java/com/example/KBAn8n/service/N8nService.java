@@ -53,7 +53,7 @@ public class N8nService {
     }
     // THÊM HÀM NÀY VÀO DƯỚI HÀM CŨ
     public String sendChatRequest(String question, String username, boolean isGlobal,
-                                  String faculty, String major, String subject) {
+                                  String faculty, String major, String subject, String fileBase64) {
         RestTemplate restTemplate = new RestTemplate();
 
         // Nối các thông số thành URL (Task lúc này là 'chat')
@@ -71,6 +71,12 @@ public class N8nService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        
+        // Đính kèm fileBase64 vào Body (tránh nhét vào URL vì base64 rất dài gây lỗi URI Too Long)
+        if (fileBase64 != null && !fileBase64.isEmpty()) {
+            body.add("fileBase64", fileBase64);
+        }
+        
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
         try {
