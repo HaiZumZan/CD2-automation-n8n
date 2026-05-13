@@ -111,14 +111,21 @@ const ChatBubble = ({ message, onImageClick }) => {
         <div className={`chat-bubble ${message.sender}`}>
             <div className="avatar">{message.sender === 'ai' ? 'AI' : 'Me'}</div>
             <div className="text-content">
-                {message.image && (
+                {message.file && (
                     <div style={{ marginBottom: message.text ? '10px' : '0' }}>
-                        <img 
-                            src={message.image} 
-                            alt="Uploaded" 
-                            style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '250px', objectFit: 'contain', cursor: 'pointer' }} 
-                            onClick={() => onImageClick && onImageClick(message.image)}
-                        />
+                        {message.file.isImage ? (
+                            <img 
+                                src={message.file.data} 
+                                alt="Uploaded" 
+                                style={{ maxWidth: '100%', borderRadius: '8px', maxHeight: '250px', objectFit: 'contain', cursor: 'pointer' }} 
+                                onClick={() => onImageClick && onImageClick(message.file.data)}
+                            />
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid #555' }}>
+                                <span style={{ fontSize: '20px' }}>📄</span>
+                                <span style={{ fontSize: '13px', color: '#e0e0e0', wordBreak: 'break-all' }}>{message.file.name}</span>
+                            </div>
+                        )}
                     </div>
                 )}
                 {renderContent(message.text)}
