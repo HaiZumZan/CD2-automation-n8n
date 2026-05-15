@@ -11,12 +11,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/study")
 @RequiredArgsConstructor
 public class StudyController {
 
     private final StudyService studyService;
+
+    @GetMapping("/flashcard/learned-files")
+    public ResponseEntity<?> getLearnedFiles(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) return ResponseEntity.status(401).body("Token lỗi!");
+        List<String> learnedFiles = studyService.getLearnedFiles(userDetails.getUsername());
+        return ResponseEntity.ok(learnedFiles);
+    }
 
     @PostMapping("/flashcard")
     public ResponseEntity<?> generateFlashcards(
@@ -51,7 +61,8 @@ public class StudyController {
         String result = studyService.evaluateFeynman(
                 request.getFile_name(),
                 userDetails.getUsername(),
-                request.getStudent_message()
+                request.getStudent_message(),
+                request.getPersona()
         );
         return ResponseEntity.ok(result);
     }

@@ -15,4 +15,7 @@ public interface FileRepository extends JpaRepository<FileMetadata, Long> {
     List<FileMetadata> findByOwnerUsernameAndIsGlobalFalse(String username);
     List<FileMetadata> findByOwnerUsernameOrIsGlobalTrue(String username);
 
+    // Kiểm tra tồn tại
+    boolean existsByFileName(String fileName);
+    boolean existsByFileNameAndOwnerUsername(String fileName, String ownerUsername);
 }

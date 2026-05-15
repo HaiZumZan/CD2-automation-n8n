@@ -14,7 +14,7 @@ const ChatScreen = () => {
     const [isDragging, setIsDragging] = useState(false); // Thêm state cho drag and drop
     const dragCounter = useRef(0);
     const scrollRef = useRef();
-    
+
     // Sử dụng logout từ Context
     const { logout } = useContext(AuthContext);
 
@@ -84,7 +84,7 @@ const ChatScreen = () => {
         e.stopPropagation();
         setIsDragging(false);
         dragCounter.current = 0;
-        
+
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const file = e.dataTransfer.files[0];
             processAttachedFile(file);
@@ -110,17 +110,17 @@ const ChatScreen = () => {
 
     const handleSend = async () => {
         if ((!input.trim() && !attachedFile) || loading) return;
-        
+
         const currentInput = input.trim();
         const fileToSend = attachedFile;
-        
+
         setMessages(prev => [...prev, { text: currentInput, sender: 'student', file: fileToSend }]);
         setInput('');
         setAttachedFile(null);
         setLoading(true);
 
         try {
-            const res = await askAI(currentInput, false, "", "", "", fileToSend ? fileToSend.data : null);
+            const res = await askAI(currentInput, true, "", "", "", fileToSend ? fileToSend.data : null);
             setMessages(prev => [...prev, { text: res.answer, sender: 'ai' }]);
         } catch (err) {
             setMessages(prev => [...prev, { text: "Lỗi kết nối bộ não AI!", sender: 'ai' }]);
@@ -128,8 +128,8 @@ const ChatScreen = () => {
     };
 
     return (
-        <div 
-            className="app-container" 
+        <div
+            className="app-container"
             style={{ flexDirection: 'column', position: 'relative' }}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -150,19 +150,19 @@ const ChatScreen = () => {
             )}
 
             {/* THÊM HEADER CHO NÚT LOGOUT */}
-            <header className="chat-header" style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
+            <header className="chat-header" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
                 padding: '1rem 2rem',
                 background: 'var(--bg-card)',
                 borderBottom: '1px solid #333'
             }}>
                 <h3 style={{ color: 'var(--accent-color)' }}>AI Knowledge Base</h3>
-                <button 
-                    onClick={logout} 
-                    style={{ 
-                        background: 'transparent', 
-                        border: '1px solid #ff6b6b', 
+                <button
+                    onClick={logout}
+                    style={{
+                        background: 'transparent',
+                        border: '1px solid #ff6b6b',
                         color: '#ff6b6b',
                         padding: '0.5rem 1rem',
                         borderRadius: '8px',
@@ -182,10 +182,10 @@ const ChatScreen = () => {
                 ))}
                 {loading && (
                     <div className="chat-bubble ai">
-                         <div className="avatar">AI</div>
-                         <div className="text-content loading-dots">
+                        <div className="avatar">AI</div>
+                        <div className="text-content loading-dots">
                             <Loader2 className="animate-spin" size={18} />
-                         </div>
+                        </div>
                     </div>
                 )}
                 <div ref={scrollRef} />
@@ -198,8 +198,8 @@ const ChatScreen = () => {
                 </div>
             )}
 
-            <footer 
-                className="input-container" 
+            <footer
+                className="input-container"
                 style={{ flexDirection: 'column', alignItems: 'flex-start' }}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
@@ -207,7 +207,7 @@ const ChatScreen = () => {
                 onDrop={handleDrop}
             >
                 {attachedFile && (
-                    <div style={{ 
+                    <div style={{
                         position: "relative", width: "fit-content", marginBottom: "10px", marginLeft: "10px",
                         padding: attachedFile.isImage ? "0" : "10px",
                         backgroundColor: attachedFile.isImage ? "transparent" : "#2d2d3a",
@@ -240,15 +240,15 @@ const ChatScreen = () => {
                         <Camera size={20} />
                         <input type="file" hidden onChange={handleFileSelect} disabled={loading} />
                     </label>
-                    <input 
-                        value={input} 
+                    <input
+                        value={input}
                         placeholder="Hỏi AI Study Assistant hoặc Paste (Ctrl+V) ảnh/file..."
-                        onChange={(e)=>setInput(e.target.value)} 
-                        onKeyDown={(e)=>e.key==='Enter' && handleSend()} 
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                         onPaste={handlePaste}
                         disabled={loading}
                     />
-                    <button onClick={handleSend} disabled={(!input.trim() && !attachedFile) || loading}><Send size={20}/></button>
+                    <button onClick={handleSend} disabled={(!input.trim() && !attachedFile) || loading}><Send size={20} /></button>
                 </div>
             </footer>
         </div>

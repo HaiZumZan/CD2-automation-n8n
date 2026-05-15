@@ -1,29 +1,36 @@
-import axiosClient from "../api/axiosClient";
-import { ENDPOINTS } from "../constants/ApiEndpoints";
+import axiosClient from '../api/axiosClient';
+import { ENDPOINTS } from '../constants/ApiEndpoints';
 
-// Đã nâng cấp: Nhận thêm các biến để lọc tài liệu
-export const askAI = async (
-  message,
-  isGlobal = true,
-  faculty = "",
-  major = "",
-  subject = "",
-  fileBase64 = null
-) => {
-  const res = await axiosClient.post(ENDPOINTS.CHAT_ASK, {
-    message,
-    isGlobal: String(isGlobal), // Ép thành chuỗi để Java dễ đọc từ Map<String, String>
-    faculty,
-    major,
-    subject,
-    fileBase64: fileBase64 || "", // Gửi file base64 nếu có
-  });
+export const askAI = async (message, isGlobal, faculty, major, subject, fileBase64) => {
+    try {
+        // Đóng gói dữ liệu thành JSON để gửi tới ChatController
+        const payload = {
+            message: message,
+            isGlobal: isGlobal.toString(), // Chuyển boolean thành chuỗi để Java dễ đọc
+            faculty: faculty || "",
+            major: major || "",
+            subject: subject || "",
+            fileBase64: fileBase64 || ""
+        };
 
-  // Trả về trực tiếp chuỗi câu trả lời để giao diện dễ dùng
-  return res.data.answer;
+        // GỌI ĐÚNG VÀO ENDPOINT: /api/chat/ask
+        const response = await axiosClient.post(ENDPOINTS.CHAT_ASK, payload);
+        
+        // Trả về thẳng object { answer: "..." }
+        return response.data; 
+    } catch (error) {
+        console.error("Lỗi khi gọi AI Tutor:", error);
+        throw error;
+    }
 };
 
+// Hàm lấy lịch sử chat
 export const getChatHistory = async () => {
-  const res = await axiosClient.get(ENDPOINTS.CHAT_HISTORY);
-  return res.data;
+    try {
+        const response = await axiosClient.get(ENDPOINTS.CHAT_HISTORY);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi lấy lịch sử chat:", error);
+        throw error;
+    }
 };

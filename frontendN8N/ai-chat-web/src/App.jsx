@@ -9,7 +9,7 @@ import AIChatPage from "./components/AIChatPage";
 import DigitalLibrary from "./components/DigitalLibrary";
 import StudentDashboard from "./components/StudentDashboard"; // ✅ 1. THÊM DÒNG NÀY VÀO
 import StudyAIScreen from './screens/StudyAIScreen'; // THÊM MỚI
-
+import UserProfileWidget from './components/UserProfileWidget';
 
 function App() {
   const { token, logout, user } = useContext(AuthContext);
@@ -22,6 +22,7 @@ function App() {
 
   return (
     <div className="main-layout">
+      {token && <UserProfileWidget />}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}

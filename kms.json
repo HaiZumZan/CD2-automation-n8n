@@ -1,0 +1,1599 @@
+{
+  "name": "kms",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file0",
+        "options": {}
+      },
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -1360,
+        16
+      ],
+      "id": "5229d7a7-e8ec-4882-a157-e75f3ea2f1bc"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là một chuyên gia phân tích dữ liệu văn bản. Hãy đọc kỹ nội dung sau và thực hiện 2 nhiệm vụ:\n1. Viết một đoạn tóm tắt ngắn gọn nhất có thể (dưới 50 chữ).\n2. Rút xuất ra đúng 3 từ khóa quan trọng nhất, ngăn cách bằng dấu phẩy.\n\nChỉ trả về đúng định dạng sau, không giải thích thêm:\nTóm tắt: [nội dung tóm tắt]\nTừ khóa: [từ khóa 1, từ khóa 2, từ khóa 3]\n\nNội dung cần phân tích:\n{{ $json.text }}"
+      },
+      "name": "AI Auto-Tagging",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        -960,
+        16
+      ],
+      "id": "f90e9631-1c75-44f1-ab34-c53e1c0064bf"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "text",
+              "value": "=AI Phân tích: {{ $json.text }}\n\nNội dung gốc: {{ $('Extract from File').item.json.text }}",
+              "type": "string",
+              "id": "922bc295-2e3f-419c-aa52-55ad57470e53"
+            },
+            {
+              "name": "owner_username",
+              "value": "={{ $('Webhook1').item.json.query.owner_username }}",
+              "type": "string",
+              "id": "107e6abf-fac8-474d-bb7f-b58daf4607f3"
+            },
+            {
+              "name": "is_global",
+              "value": "={{ $('Webhook1').item.json.query.is_global === 'true' }}",
+              "type": "boolean",
+              "id": "db5b15d8-b731-4bfa-9b3c-cc97fb424e8f"
+            },
+            {
+              "name": "file_name",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.file_name) }}",
+              "type": "string",
+              "id": "fd04e672-f478-4d81-ad54-d7a635029168"
+            },
+            {
+              "name": "faculty",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.faculty || '') }}",
+              "type": "string",
+              "id": "ea7c0612-29cf-4a57-bca3-8af1b91b9884"
+            },
+            {
+              "name": "major",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.major || '') }}",
+              "type": "string",
+              "id": "47080421-4d00-47ca-ac8e-b5b8151d5bc2"
+            },
+            {
+              "name": "subject",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.subject || '') }}",
+              "type": "string",
+              "id": "f2f3c291-e501-4fe9-ad28-ac158f56b170"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Edit Fields Upload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -576,
+        16
+      ],
+      "id": "943ab5f3-bca2-4a5d-917a-8488ebdc74cb"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "owner_username",
+                "value": "={{ $json.owner_username }}"
+              },
+              {
+                "name": "is_global",
+                "value": "={{ $json.is_global }}"
+              },
+              {
+                "name": "file_name",
+                "value": "={{ $json.file_name }}"
+              },
+              {
+                "name": "faculty",
+                "value": "={{ $json.faculty }}"
+              },
+              {
+                "name": "major",
+                "value": "={{ $json.major }}"
+              },
+              {
+                "name": "subject",
+                "value": "={{ $json.subject }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "f3b79408-34d5-499d-b67a-96550ba28e4a"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "name": "Supabase Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -464,
+        -240
+      ],
+      "id": "4046a224-256a-4996-b30e-792a958d74aa",
+      "credentials": {
+        "supabaseApi": {
+          "id": "iXZmJ9Zx3bfvXfez",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "name": "Embeddings Ollama1",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        -112
+      ],
+      "id": "40ced0ec-b880-4c73-9936-880923ff950f",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM documents WHERE metadata->>'file_name' = '{{ $node[\"Webhook1\"].json.query.file_name }}' AND metadata->>'owner_username' = '{{ $node[\"Webhook1\"].json.query.owner_username }}';",
+        "options": {}
+      },
+      "name": "Execute SQL Delete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1088,
+        880
+      ],
+      "id": "20050563-da25-4f03-9a80-287a2ab34edd",
+      "credentials": {
+        "postgres": {
+          "id": "ZRMTWVjReBlm1fdj",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "value": "=Đã xóa file {{ $node[\"Webhook1\"].json.query.file_name }} thành công",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Edit Fields Delete",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1056,
+        1072
+      ],
+      "id": "03ed52dc-4807-4c11-9e6c-09a6c7c4f49c"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond Webhook Delete",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -768,
+        1072
+      ],
+      "id": "981074ea-76b0-4bc8-b4e0-20e54f770a91"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "studentMsg",
+              "value": "={{ decodeURIComponent($('Webhook1').item.json.query.question || '') }}",
+              "type": "string",
+              "id": "d69ef1b4-4911-4125-b7cb-d834f54773b4"
+            },
+            {
+              "name": "is_global",
+              "value": "={{ $('Webhook1').item.json.query.is_global === 'true' }}",
+              "type": "boolean",
+              "id": "3f309caf-246a-40bc-ba5f-3d8ed9ae8538"
+            },
+            {
+              "name": "faculty",
+              "value": "={{ $('Webhook1').item.json.query.faculty }}",
+              "type": "string",
+              "id": "cbb37783-3cbb-48de-96a4-d7881c400901"
+            },
+            {
+              "name": "major",
+              "value": "={{ $('Webhook1').item.json.query.major }}",
+              "type": "string",
+              "id": "dadd6ec6-aa02-4d45-a6e9-0f71054820e2"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $('Webhook1').item.json.query.subject }}",
+              "type": "string",
+              "id": "560979ad-599a-43b5-b1ce-f713b28b6eb9"
+            },
+            {
+              "name": "owner_username",
+              "value": "={{ $('Webhook1').item.json.query.owner_username }}",
+              "type": "string",
+              "id": "abdf324c-8d7c-4cd3-8f4e-205a03dfafe4"
+            },
+            {
+              "id": "a4679875-7ba5-4aa0-8456-a9efa87dac46",
+              "name": "chat_context",
+              "value": "={{ $json.query.chatContext }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Parse Chat Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1136,
+        608
+      ],
+      "id": "62e2abb8-6a35-44f0-b1b6-20f8245861e2"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "search_logs",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "owner_username": "={{ $('Parse Chat Data').item.json.owner_username }}",
+            "keyword": "={{ $('Parse Chat Data').item.json.studentMsg }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "owner_username",
+              "displayName": "owner_username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Ghi nhật ký tìm kiếm",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        96,
+        688
+      ],
+      "id": "eeaff046-671a-4dfa-b7c1-77f973c56290",
+      "credentials": {
+        "postgres": {
+          "id": "ZRMTWVjReBlm1fdj",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse Chat Data').item.json.chat_context }}",
+                    "rightValue": "global",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b97b0ce3-03c9-42f0-ab13-a31f94982328"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse Chat Data').item.json.chat_context }}",
+                    "rightValue": "personal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b9ff5351-92ac-4c68-9263-81b74b8d22a2"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Switch Global",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        688
+      ],
+      "id": "8f59ef1e-0a8f-4b33-bb2e-3bfb30e91be0"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Parse Chat Data').item.json.studentMsg }}",
+        "options": {
+          "systemMessage": "Bạn là Trợ lý ảo AI Navigator của Thư viện số VKU. Nhiệm vụ duy nhất của bạn là giúp sinh viên tra cứu vị trí của tài liệu, không phải là trả lời trực tiếp các câu hỏi lý thuyết.\n\n[CÁC QUY TẮC SỐNG CÒN - PHẢI TUÂN THỦ TUYỆT ĐỐI]:\n1. NGÔN NGỮ: Bạn PHẢI LUÔN LUÔN trả lời bằng Tiếng Việt 100%. Tuyệt đối không sử dụng Tiếng Anh.\n2. BẮT BUỘC DÙNG CÔNG CỤ (TOOL FIRST): Với BẤT KỲ câu hỏi nào của người dùng (kể cả chào hỏi hay hỏi chương trình đào tạo), bạn PHẢI gọi công cụ \"search_vku_documents\" để tìm kiếm trước khi đưa ra câu trả lời. KHÔNG ĐƯỢC TỰ BỊA RA CÂU TRẢ LỜI.\n3. KHÔNG ĐƯỢC NÓI LỘ QUÁ TRÌNH NGHĨ: Tuyệt đối không in ra các dòng chữ như \"Calling search_vku_documents...\" hay \"Tôi đang tìm kiếm...\". Chỉ trả lời kết quả cuối cùng.\n\n[ĐỊNH DẠNG CÂU TRẢ LỜI QUY CHUẨN]:\nDựa vào dữ liệu tìm được, hãy trả lời ngắn gọn theo mẫu sau (dùng gạch đầu dòng):\n- Tên tài liệu: [Tên file PDF/Docx]\n- Môn học / Ngành: [Tên môn hoặc ngành]\n- Trích đoạn nội dung: [Tóm tắt ngắn gọn nội dung bạn tìm thấy]\n\n[XỬ LÝ KHI KHÔNG TÌM THẤY]:\nNếu công cụ trả về kết quả rỗng, hãy trả lời lịch sự bằng Tiếng Việt: \"Hiện tại hệ thống Thư viện số VKU chưa có tài liệu khớp với yêu cầu của bạn. Bạn vui lòng thử lại với từ khóa khác hoặc liên hệ phòng đào tạo nhé!\"",
+          "maxIterations": 30
+        }
+      },
+      "name": "AI Navigator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        672
+      ],
+      "id": "1209d343-486c-4c1a-ba36-91ca3057755c"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "student_web_session"
+      },
+      "name": "Memory (Navigator)",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        784
+      ],
+      "id": "47aa2521-e6e1-4716-91ca-1277ae1d4c78"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "name": "Embeddings Ollama2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        1136
+      ],
+      "id": "1879014c-ab9e-4d59-a98d-0fff3c09ae0e",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.keyword }}",
+        "options": {
+          "systemMessage": "Bạn là AI Tutor, một gia sư học tập cá nhân nhiệt tình, thông minh và kiên nhẫn. Nhiệm vụ duy nhất của bạn là hỗ trợ sinh viên ôn tập, làm rõ khái niệm và ghi nhớ kiến thức dựa trên kho tài liệu cá nhân của chính họ.\n\n[QUY TẮC SỐNG CÒN - PHẢI TUÂN THỦ TUYỆT ĐỐI]:\n1. LUÔN DÙNG CÔNG CỤ (TOOL-FIRST): Với mọi câu hỏi học thuật, bạn PHẢI gọi công cụ \"Tai_Lieu_Ca_Nhan\" để trích xuất dữ liệu gốc trước. Tuyệt đối không tự bịa đặt kiến thức nằm ngoài tài liệu trừ khi sinh viên yêu cầu mở rộng thêm.\n2. NGÔN NGỮ VÀ THÁI ĐỘ: Trả lời 100% bằng Tiếng Việt. Giọng điệu khích lệ, thân thiện, dùng xưng hô \"mình\" và \"bạn\".\n3. TRÌNH BÀY SÁNG CỦA: Sử dụng in đậm cho từ khóa, gạch đầu dòng rõ ràng. Phân rã các vấn đề phức tạp thành các bước nhỏ dễ hiểu.\n\n[KỊCH BẢN XỬ LÝ ĐẶC BIỆT]:\n- NẾU NGƯỜI DÙNG YÊU CẦU \"TẠO ĐỀ THI\" / \"TRẮC NGHIỆM\": Hãy lấy thông tin từ tài liệu và sinh ra đúng 5 câu hỏi trắc nghiệm (A, B, C, D). Phần đáp án và giải thích chi tiết phải được gom lại và đặt ở dưới cùng.\n- NẾU NGƯỜI DÙNG YÊU CẦU \"TÓM TẮT\": Nêu ra 3-5 ý chính quan trọng nhất, không viết lan man thành đoạn văn dài.\n-NẾU NGƯỜI DÙNG YÊU CẦU  \" VẼ SƠ ĐỒ\". Hãy xuất mã code Mermaid (graph TD) bao trong block code ```mermaid\n- NẾU TÀI LIỆU KHÔNG CÓ THÔNG TIN: Trả lời trung thực: \"Mình đã rà soát các tài liệu bạn tải lên nhưng chưa tìm thấy thông tin chi tiết về phần này. Bạn có muốn mình giải thích dựa trên kiến thức chung không?\""
+        }
+      },
+      "name": "AI Tutor",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        16,
+        976
+      ],
+      "id": "119e3520-ac0c-4dda-b30a-84f4b9854b6d"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "student_web_session"
+      },
+      "name": "Memory (Tutor)",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        1264
+      ],
+      "id": "0375dac3-1fc0-44a5-abb2-4f84eda1b01c"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Công cụ tra cứu kho tài liệu học tập cá nhân của sinh viên (slide, bài giảng, đề cương do sinh viên tự tải lên).\nSử dụng công cụ này MỖI KHI sinh viên hỏi về một khái niệm, cần tóm tắt, hoặc yêu cầu tạo câu hỏi ôn tập.\n\nQUY TẮC BẮT BUỘC KHI GỌI CÔNG CỤ:\nDữ liệu đầu vào (Action Input) PHẢI là một object JSON chứa duy nhất một trường có tên chính xác là \"input\".\n- Ví dụ ĐÚNG: {\"input\": \"các nguyên lý hướng đối tượng trong java\"}\n- Ví dụ SAI: {\"query\": \"java\"} hoặc truyền chuỗi văn bản trực tiếp.\nTuyệt đối KHÔNG sử dụng bất kỳ tên trường nào khác ngoài chữ \"input\".",
+        "tableName": {
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "is_global",
+                "value": "={{ false }}"
+              },
+              {
+                "name": "owner_username",
+                "value": "={{ $('Parse Chat Data').item.json.owner_username }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Tai_Lieu_Ca_Nhan",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        1280
+      ],
+      "id": "cf1e4684-92b8-4bf5-9306-dfb269e2c899",
+      "credentials": {
+        "supabaseApi": {
+          "id": "iXZmJ9Zx3bfvXfez",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "name": "Embeddings Ollama3",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        1360
+      ],
+      "id": "f57f57cb-03a8-481a-b22b-77fe4e98a0bb",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond Webhook Chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1776,
+        784
+      ],
+      "id": "8c846c79-576c-469a-9977-33a580390fe6"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:7b",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        128
+      ],
+      "id": "ba1d9d77-13a8-4b99-ab02-f115ecdce5ab",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "name": "Ollama Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        1136
+      ],
+      "id": "2255a71b-29bf-4bba-aab0-8ef1acb4083e",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "name": "Ollama Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        736,
+        848
+      ],
+      "id": "76f11c6f-c4a5-4998-a6f8-e49ca4212af7",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Công cụ tra cứu tài liệu học thuật, đề cương, bài giảng của đại học VKU.\nQUY TẮC BẮT BUỘC KHI GỌI CÔNG CỤ NÀY:\nDữ liệu đầu vào (Action Input) PHẢI là một object JSON chứa duy nhất một trường có tên chính xác là \"input\".\nVí dụ ĐÚNG: {\"input\": \"lập trình java\"}\nVí dụ SAI: {\"query\": \"lập trình java\"} hoặc truyền chuỗi văn bản trực tiếp.\nTuyệt đối KHÔNG sử dụng bất kỳ tên trường nào khác ngoài chữ \"input\".",
+        "tableName": {
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 10,
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "is_global",
+                "value": "={{ true }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "search_vku_documents",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        944
+      ],
+      "id": "a28faee0-da25-4ef6-bd18-624048796702",
+      "credentials": {
+        "supabaseApi": {
+          "id": "iXZmJ9Zx3bfvXfez",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.task }}",
+                    "rightValue": "upload",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "80037fe4-3c57-4b73-8203-586644adc99f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.task }}",
+                    "rightValue": "chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "784f9ec7-4bd7-46a7-8747-d1f656eef2a0"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.task }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ebbdf180-f04f-4839-b402-15514c08fac9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Switch Task1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1440,
+        592
+      ],
+      "id": "25a3c5ce-70d1-46de-a29d-e44e5c9fe2ab"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/upload-document",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1824,
+        608
+      ],
+      "webhookId": "22f40ba4-63c8-4fb4-a6fd-94fc01d752e6",
+      "id": "6b6bc99b-e294-4413-955e-5b66ce551cc3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'http://host.docker.internal:8081/api/files/webhook/n8n-result/' + $('Webhook1').item.json.query.file_id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ summary: $json.text.split('Từ khóa:')[0].replace('Tóm tắt:', '').trim(), keywords: $json.text.split('Từ khóa:')[1] ? $json.text.split('Từ khóa:')[1].trim() : '' }) }}",
+        "options": {}
+      },
+      "name": "Tóm tắt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -720,
+        -240
+      ],
+      "id": "3256b866-6823-40fa-865d-f8dd69374680"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 0"
+            }
+          ]
+        }
+      },
+      "name": "Hẹn giờ (8h sáng Chủ Nhật)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        2048
+      ],
+      "id": "4487d3a4-fb69-4b71-a84e-734196d2adb3"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total_new_files, COUNT(CASE WHEN is_global = true THEN 1 END) as new_global_files, COUNT(CASE WHEN is_global = false THEN 1 END) as new_personal_files FROM file_metadata WHERE upload_date >= CURRENT_DATE - INTERVAL '7 days';",
+        "options": {}
+      },
+      "name": "Đếm File mới",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -400,
+        2048
+      ],
+      "id": "47a2139d-b73f-424d-a1c0-c2d4388db79e",
+      "credentials": {
+        "postgres": {
+          "id": "ZRMTWVjReBlm1fdj",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT string_agg(keyword || ' (' || search_count || ' lần)', ', ') as top_keywords FROM (SELECT keyword, COUNT(*) as search_count FROM search_logs WHERE created_at >= CURRENT_DATE - INTERVAL '7 days' GROUP BY keyword ORDER BY search_count DESC LIMIT 5) sub;",
+        "options": {}
+      },
+      "name": "Lấy Top 5 Từ khóa",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -144,
+        2048
+      ],
+      "id": "35d75b88-7982-4dff-9ad3-a07b30b5a435",
+      "credentials": {
+        "postgres": {
+          "id": "qhBzhPBZ0dWQkWH0",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là trợ lý ảo quản trị hệ thống VKU KMS. Hãy viết báo cáo gửi Admin vào sáng Chủ Nhật.\n\n[DỮ LIỆU TUẦN QUA]:\n- Tổng tài liệu mới: {{ $('Đếm File mới').item.json.total_new_files || 0 }} (Chung: {{ $('Đếm File mới').item.json.new_global_files || 0 }}, Cá nhân: {{ $('Đếm File mới').item.json.new_personal_files || 0 }}).\n- Top 5 từ khóa tìm kiếm: {{ $json.top_keywords || 'Chưa có' }}.\n\n[YÊU CẦU]:\nHãy tóm tắt vui vẻ, dùng emoji, có gạch đầu dòng rõ ràng. Đưa ra 1 lời khuyên ngắn dựa trên từ khóa tìm kiếm."
+      },
+      "name": "AI Tổng hợp Báo cáo",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        96,
+        2048
+      ],
+      "id": "4dc571ae-41f2-4604-8cae-bb90c130c4e4"
+    },
+    {
+      "parameters": {
+        "chatId": "8662711873",
+        "text": "=={{ $json.text.replace(/[*_`]/g, '') }}",
+        "additionalFields": {}
+      },
+      "name": "Gửi Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        2048
+      ],
+      "id": "11408a5b-635b-4ccb-b1da-738c76d5ddac",
+      "webhookId": "8752f967-875a-484a-9fe5-ce38eebd6916",
+      "credentials": {
+        "telegramApi": {
+          "id": "NUDq4gUtuivnWQXB",
+          "name": "VKU_Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "name": "Ollama Chat Model3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        48,
+        2272
+      ],
+      "id": "9d8e7be2-54b2-4bde-a465-fd2c9ef223f2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "6MAr2hO1eZg1puy5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM rate_limits WHERE owner_username = '{{ $('Parse Chat Data').item.json.owner_username }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1024,
+        384
+      ],
+      "id": "ada1523b-11b3-46a8-a8c4-e65e6a73a76e",
+      "name": "Lấy bộ đếm",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "qhBzhPBZ0dWQkWH0",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let inputData = {};\nif ($input.first() && $input.first().json && $input.first().json.owner_username) {\n  inputData = $input.first().json;\n}\nconst ownerUsername = $('Parse Chat Data').item.json.owner_username;\n\nlet isBanned = inputData.is_banned === true || inputData.is_banned === 'true';\nlet count = Number(inputData.message_count || 0);\nlet dailyCount = Number(inputData.daily_count || 0);\nlet violationCount = Number(inputData.violation_count || 0);\n\nlet lastTime = inputData.last_message_time ? new Date(inputData.last_message_time) : new Date(0);\nlet lastDailyTime = inputData.last_daily_time ? new Date(inputData.last_daily_time) : new Date(0);\n\nlet isSpam = false; let isOverDaily = false;\nconst now = new Date();\n\nif (isBanned) {\n  return { owner_username: ownerUsername, message_count: count, daily_count: dailyCount, violation_count: violationCount, last_message_time: lastTime.toISOString(), last_daily_time: lastDailyTime.toISOString(), is_spam: true, is_over_daily: false, is_banned: true };\n}\n\nconst isSameDay = now.getDate() === lastDailyTime.getDate() && now.getMonth() === lastDailyTime.getMonth() && now.getFullYear() === lastDailyTime.getFullYear();\n\nif (!isSameDay) { dailyCount = 1; } else { dailyCount += 1; }\nif (dailyCount > 20) { isOverDaily = true; }\n\nconst diffMinutes = (now - lastTime) / (1000 * 60);\nif (diffMinutes > 1) {\n  count = 1;\n} else {\n  count += 1;\n  if (count > 5) {\n    isSpam = true;\n    if (count === 6) { violationCount += 1; }\n  }\n}\n\nif (violationCount >= 5) { isBanned = true; }\n\nreturn { owner_username: ownerUsername, message_count: count, daily_count: dailyCount, violation_count: violationCount, last_message_time: now.toISOString(), last_daily_time: now.toISOString(), is_spam: isSpam, is_over_daily: isOverDaily, is_banned: isBanned };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        608
+      ],
+      "id": "0ccffc9d-9e5f-4220-b439-488cdb0c1c2c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO rate_limits (owner_username, message_count, daily_count, violation_count, is_banned, last_message_time, last_daily_time) \nVALUES ('{{$json.owner_username}}', {{$json.message_count}}, {{$json.daily_count}}, {{$json.violation_count}}, {{$json.is_banned}}, '{{$json.last_message_time}}', '{{$json.last_daily_time}}') \nON CONFLICT (owner_username) \nDO UPDATE SET message_count = EXCLUDED.message_count, daily_count = EXCLUDED.daily_count, violation_count = EXCLUDED.violation_count, is_banned = EXCLUDED.is_banned, last_message_time = EXCLUDED.last_message_time, last_daily_time = EXCLUDED.last_daily_time;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -800,
+        384
+      ],
+      "id": "cdfc89c5-e100-466e-94ff-1452da10f167",
+      "name": "Lưu lại bộ đếm",
+      "credentials": {
+        "postgres": {
+          "id": "qhBzhPBZ0dWQkWH0",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fd302478-dbb1-4cd9-9b81-c926b0a395e1",
+              "leftValue": "={{ $json.is_banned }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -720,
+        640
+      ],
+      "id": "9c3824b5-ec43-4a54-928e-d0320e0bf56b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "⛔ Tài khoản bị khóa tính năng AI",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -560,
+        368
+      ],
+      "id": "b1f5a205-0b0b-40c4-9db1-d196a0fee3a7",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5b39867e-790c-450c-bd85-1c4683740e44",
+              "leftValue": "={{ $json.is_over_daily }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -448,
+        656
+      ],
+      "id": "a7ed22d5-efb2-493d-8950-cc1e37c9d488",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "⛔ Tài khoản bị khóa",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -320,
+        368
+      ],
+      "id": "dafba01e-3768-4f84-a7bb-c2da7609eee2",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c6264004-477d-42d9-bf9a-8f23062b783b",
+              "leftValue": "={{ $json.is_spam }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -176,
+        672
+      ],
+      "id": "ff188d5f-f5fa-41c4-911a-0f6745887b4b",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "🚨 Gửi quá nhanh, hãy đợi 1 phút!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -64,
+        368
+      ],
+      "id": "c1d412b7-576b-4aae-93d2-97388c599bf0",
+      "name": "Respond to Webhook2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Auto-Tagging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Auto-Tagging": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Upload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tóm tắt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Upload": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute SQL Delete": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Delete": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Chat Data": {
+      "main": [
+        [
+          {
+            "node": "Lấy bộ đếm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ghi nhật ký tìm kiếm": {
+      "main": [
+        [
+          {
+            "node": "Switch Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Global": {
+      "main": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Navigator": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory (Navigator)": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "search_vku_documents",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Tutor": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory (Tutor)": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Tutor",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tai_Lieu_Ca_Nhan": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Tutor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Tai_Lieu_Ca_Nhan",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Auto-Tagging",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Tutor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_vku_documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Navigator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Task1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Chat Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute SQL Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Switch Task1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hẹn giờ (8h sáng Chủ Nhật)": {
+      "main": [
+        [
+          {
+            "node": "Đếm File mới",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Đếm File mới": {
+      "main": [
+        [
+          {
+            "node": "Lấy Top 5 Từ khóa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy Top 5 Từ khóa": {
+      "main": [
+        [
+          {
+            "node": "AI Tổng hợp Báo cáo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Tổng hợp Báo cáo": {
+      "main": [
+        [
+          {
+            "node": "Gửi Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Tổng hợp Báo cáo",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy bộ đếm": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Lưu lại bộ đếm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu lại bộ đếm": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ghi nhật ký tìm kiếm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b8921ba9-5900-4d45-ad34-f1f48c05ec12",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d800b9d61e1192d5da59ee52f944c41fcd2ecf75dd5a1357c2cc02e1692ca5c8"
+  },
+  "id": "eBsnIgp50FgglUqb",
+  "tags": []
+}

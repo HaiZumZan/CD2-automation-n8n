@@ -42,6 +42,12 @@ export const getFiles = async () => {
   const res = await axios.get(`${API_URL}/list`, getAuthHeader());
   return res.data;
 };
+
+// 2.5 Lấy danh sách file cho chế độ Study AI
+export const getStudyFiles = async () => {
+  const res = await axios.get(`${API_URL}/study`, getAuthHeader());
+  return res.data;
+};
 export const downloadFile = async (id, fileName) => {
   const res = await axios.get(`${API_URL}/download/${id}`, {
     ...getAuthHeader(),
@@ -120,18 +126,4 @@ export const getFilePreviewUrl = async (id) => {
   return window.URL.createObjectURL(blob);
 };
 // --- API CHO TRỢ LÝ AI (PHÂN LUỒNG NGỮ CẢNH) ---
-export const sendChatRequest = async (question, chatContext, ownerUsername, fileBase64 = null) => {
-  const token = localStorage.getItem("accessToken");
 
-  // ĐÃ SỬA: Đổi từ /api/n8n-webhook thành /api/files/n8n-webhook
-  const url = `/api/files/n8n-webhook?task=chat&question=${encodeURIComponent(question)}&chatContext=${chatContext}&owner_username=${ownerUsername}`;
-
-  const res = await axios.post(
-    url,
-    { fileBase64: fileBase64 || "" }, // Thêm fileBase64 vào payload
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    },
-  );
-  return res.data;
-};

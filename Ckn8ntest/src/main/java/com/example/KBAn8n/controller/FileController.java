@@ -31,10 +31,6 @@ public class FileController {
     private final N8nService n8nService;
     private final FileService fileService;
 
-    @org.springframework.beans.factory.annotation.Value("${n8n.webhook.url}")
-    private String n8nWebhookUrl;
-
-
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
@@ -49,6 +45,11 @@ public class FileController {
         if (userDetails == null) return ResponseEntity.status(401).body("Token lỗi!");
         String username = userDetails.getUsername();
         boolean finalGlobal = "admin".equals(username) ? true : isGlobalFromRequest;
+
+        // KIỂM TRA FILE ĐÃ TỒN TẠI CHƯA
+        if (fileRepository.existsByFileName(file.getOriginalFilename())) {
+            return ResponseEntity.status(400).body("Tài liệu đã tồn tại, hãy đăng tải tài liệu khác!");
+        }
 
         // 1. Lưu file vật lý
         String uploadDir = System.getProperty("user.dir") + "/uploads/";
@@ -198,44 +199,7 @@ public class FileController {
 // Bằng dòng mới này:
             return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Lỗi server"));        }
     }
-    // --- API LÀM CẦU NỐI (PROXY) TỪ REACT SANG N8N ---
-    @PostMapping("/n8n-webhook")
-    public ResponseEntity<?> chatWithN8n(
-            @RequestParam("task") String task,
-            @RequestParam("question") String question,
-            @RequestParam("chatContext") String chatContext,
-            @RequestParam("owner_username") String ownerUsername,
-            @AuthenticationPrincipal UserDetails userDetails) {
 
-        // 1. Kiểm tra bảo mật (Chỉ user đã đăng nhập mới được chat)
-        if (userDetails == null) return ResponseEntity.status(401).body(java.util.Map.of("error", "Vui lòng đăng nhập!"));
-
-        try {
-            // 2. URL của Webhook n8n
-            // Sử dụng n8nWebhookUrl được inject từ application.properties
-
-
-            // 3. Đóng gói các tham số vào URL (Dùng UriComponentsBuilder để tránh lỗi font Tiếng Việt)
-            org.springframework.web.util.UriComponentsBuilder builder = org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(n8nWebhookUrl)
-                    .queryParam("task", task)
-                    .queryParam("question", question)
-                    .queryParam("chatContext", chatContext)
-                    .queryParam("owner_username", ownerUsername);
-
-            // 4. Khởi tạo RestTemplate để giao tiếp HTTP
-            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-
-            // 5. Bắn tín hiệu sang n8n và chờ kết quả trả về
-            String response = restTemplate.postForObject(builder.toUriString(), null, String.class);
-
-            // 6. Trả kết quả AI về lại cho giao diện React
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Lỗi kết nối AI: " + e.getMessage()));
-        }
-    }
 
     // Thêm vào FileController.java
     @GetMapping("/study")

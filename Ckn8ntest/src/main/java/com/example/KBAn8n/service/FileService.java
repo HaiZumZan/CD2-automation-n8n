@@ -1,7 +1,9 @@
 package com.example.KBAn8n.service;
 
 import com.example.KBAn8n.entity.FileMetadata;
+import com.example.KBAn8n.entity.User;
 import com.example.KBAn8n.repository.FileRepository;
+import com.example.KBAn8n.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FileService {
     private final FileRepository fileRepository;
+    private final UserRepository userRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     @Value("${n8n.webhook.url}")
     String n8nUrl ;
@@ -68,8 +71,17 @@ public class FileService {
 
     // Thêm vào FileService.java
     public List<FileMetadata> getFilesForStudy(String username) {
+        // Lấy danh sách các tài khoản có quyền ADMIN
+        List<String> adminUsernames = userRepository.findAll().stream()
+                .filter(u -> u.getRole() != null && u.getRole().contains("ADMIN"))
+                .map(User::getUsername)
+                .collect(Collectors.toList());
+
         return fileRepository.findAll().stream()
-                .filter(f -> f.getOwnerUsername().equals(username) || f.isGlobal())
+                .filter(f -> f.getOwnerUsername().equals(username) 
+                          || adminUsernames.contains(f.getOwnerUsername())
+                          || "admin".equals(f.getOwnerUsername())
+                          || f.isGlobal())
                 .collect(Collectors.toList());
     }
 

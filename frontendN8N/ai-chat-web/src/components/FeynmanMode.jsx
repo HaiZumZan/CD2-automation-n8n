@@ -1,28 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { sendFeynmanMessage } from '../services/studyService';
-import { getFiles } from '../services/fileService';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { getStudyFiles } from '../services/fileService';
+import { ArrowLeft, Send, Loader2, Mic } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-// Cài thêm: npm install react-markdown
 
 const FeynmanMode = ({ onBack }) => {
     const [files, setFiles] = useState([]);
     const [selectedFile, setSelectedFile] = useState('');
+    const [persona, setPersona] = useState('Giáo sư tiêu chuẩn'); // THÊM NÀY
     const [started, setStarted] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingFiles, setLoadingFiles] = useState(true);
+    const [isRecording, setIsRecording] = useState(false);
     const scrollRef = useRef();
+    const recognitionRef = useRef(null); // THÊM NÀY: Lưu trữ đối tượng nhận diện giọng nói
 
     useEffect(() => {
-        getFiles()
+        getStudyFiles()
             .then(data => setFiles(Array.isArray(data) ? data : []))
             .catch(() => setFiles([]))
             .finally(() => setLoadingFiles(false));
     }, []);
 
-    // Tự cuộn xuống tin nhắn mới nhất
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, loading]);
@@ -30,10 +31,67 @@ const FeynmanMode = ({ onBack }) => {
     const handleStart = () => {
         if (!selectedFile) return;
         setStarted(true);
-        setMessages([{
-            role: 'ai',
-            content: `Xin chào! Tôi là Giáo sư AI.\n\nBạn đang học tài liệu **${selectedFile}**.\n\nHãy chọn một khái niệm trong tài liệu và **giải thích lại cho tôi nghe bằng ngôn ngữ của bạn** — như thể bạn đang giải thích cho một người chưa biết gì về chủ đề này.`
-        }]);
+        let introMsg = '';
+        if (persona === 'Giáo sư khắt khe') {
+            introMsg = `Chào bạn. Tôi là Giáo sư khắt khe.\n\nTôi thấy bạn đang học **${selectedFile}**. Hãy giải thích cho tôi một khái niệm. Nhớ rằng tôi yêu cầu sự chính xác tuyệt đối, không vòng vo!`;
+        } else if (persona === 'Trợ giảng thân thiện') {
+            introMsg = `Chào bạn nha! Mình là Trợ giảng thân thiện đây 😄.\n\nBạn đang ôn **${selectedFile}** đúng không? Cứ thoải mái giải thích một khái niệm bằng cách của bạn nhé, sai đâu mình sửa đó!`;
+        } else if (persona === 'Triết gia ') {
+            introMsg = `Chào bạn. Tôi là một chuyên gia phân tích.\n\nVới tài liệu **${selectedFile}**, bạn hiểu nó như thế nào? Hãy nói cho tôi nghe, và tôi sẽ không đưa ra đáp án trực tiếp, mà sẽ hỏi ngược lại để bạn tự tìm ra chân lý.`;
+        } else {
+            introMsg = `Xin chào! Tôi là Giáo sư AI.\n\nBạn đang học tài liệu **${selectedFile}**.\n\nHãy chọn một khái niệm và giải thích lại cho tôi nghe bằng ngôn ngữ của bạn.`;
+        }
+        setMessages([{ role: 'ai', content: introMsg }]);
+    };
+
+    const handleVoiceRecord = () => {
+        if (isRecording) {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setIsRecording(false);
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('⚠️ Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome!');
+            return;
+        }
+        
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'vi-VN';
+        
+        // SỬA LẠI THEO YÊU CẦU: Hoạt động giống Google Voice 
+        // -> Nói xong, ngừng nói một chút là tự tắt.
+        recognition.continuous = false; 
+        recognition.interimResults = false;
+        
+        recognition.onstart = () => setIsRecording(true);
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (transcript.trim()) {
+                setInput(prev => prev + (prev ? ' ' : '') + transcript.trim() + ' ');
+            }
+        };
+        
+        recognition.onerror = (event) => {
+            console.error("Lỗi Mic:", event.error);
+            if (event.error === 'not-allowed') {
+                alert("⚠️ Bị chặn Micro! Vui lòng bấm vào biểu tượng 🔒 Ổ khóa trên thanh địa chỉ trình duyệt -> Cấp quyền Micro (Allow) -> Tải lại trang.");
+            } else if (event.error === 'audio-capture') {
+                alert("⚠️ Trình duyệt không tìm thấy Micro hoặc Micro đang bị ứng dụng khác chiếm dụng (Linux/Windows lỗi driver).");
+            } else if (event.error === 'network') {
+                alert("⚠️ Tính năng nhận diện giọng nói cần có kết nối Internet!");
+            }
+            setIsRecording(false);
+        };
+        
+        recognition.onend = () => setIsRecording(false);
+        
+        recognitionRef.current = recognition;
+        recognition.start();
     };
 
     const handleSend = async () => {
@@ -44,8 +102,7 @@ const FeynmanMode = ({ onBack }) => {
         setLoading(true);
 
         try {
-            const result = await sendFeynmanMessage(selectedFile, studentMsg);
-            // n8n Feynman trả về output từ AI Agent
+            const result = await sendFeynmanMessage(selectedFile, studentMsg, persona);
             const aiReply = result?.data || result?.output || 'Không nhận được phản hồi.';
             setMessages(prev => [...prev, { role: 'ai', content: aiReply }]);
         } catch {
@@ -82,28 +139,40 @@ const FeynmanMode = ({ onBack }) => {
                         AI sẽ đóng vai giáo sư, chấm điểm và chỉ ra những chỗ bạn hiểu sai hoặc thiếu.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                         {loadingFiles ? (
                             <p style={{ color: '#888' }}>Đang tải danh sách tài liệu...</p>
                         ) : (
-                            <select
-                                style={selectStyle}
-                                value={selectedFile}
-                                onChange={e => setSelectedFile(e.target.value)}
-                            >
-                                <option value="">-- Chọn tài liệu muốn ôn tập --</option>
-                                {files.map(f => (
-                                    <option key={f.id} value={f.fileName}>{f.fileName}</option>
-                                ))}
-                            </select>
+                            <>
+                                <select
+                                    style={{ ...selectStyle, minWidth: '200px' }}
+                                    value={selectedFile}
+                                    onChange={e => setSelectedFile(e.target.value)}
+                                >
+                                    <option value="">-- Chọn tài liệu muốn ôn tập --</option>
+                                    {files.map(f => (
+                                        <option key={f.id} value={f.fileName}>{f.fileName}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    style={{ ...selectStyle, minWidth: '200px' }}
+                                    value={persona}
+                                    onChange={e => setPersona(e.target.value)}
+                                >
+                                    <option value="Giáo sư tiêu chuẩn">Giáo sư tiêu chuẩn</option>
+                                    <option value="Giáo sư khắt khe">Giáo sư khắt khe</option>
+                                    <option value="Trợ giảng thân thiện">Trợ giảng thân thiện</option>
+                                    <option value="Triết gia Socrates">Triết gia</option>
+                                </select>
+                                <button
+                                    style={{ ...startBtnStyle, opacity: selectedFile ? 1 : 0.5 }}
+                                    onClick={handleStart}
+                                    disabled={!selectedFile}
+                                >
+                                    Bắt đầu →
+                                </button>
+                            </>
                         )}
-                        <button
-                            style={{ ...startBtnStyle, opacity: selectedFile ? 1 : 0.5 }}
-                            onClick={handleStart}
-                            disabled={!selectedFile}
-                        >
-                            Bắt đầu →
-                        </button>
                     </div>
                 </div>
             </div>
@@ -203,13 +272,34 @@ const FeynmanMode = ({ onBack }) => {
                 display: 'flex',
                 gap: '12px',
                 marginTop: '16px',
-                flexShrink: 0
+                flexShrink: 0,
+                alignItems: 'flex-end'
             }}>
+                <button
+                    onClick={handleVoiceRecord}
+                    title="Nhập bằng giọng nói"
+                    style={{
+                        backgroundColor: isRecording ? '#ff6b6b' : '#2d2d3a',
+                        color: isRecording ? '#fff' : '#4dd0e1',
+                        border: isRecording ? 'none' : '1px solid #444',
+                        borderRadius: '50%',
+                        width: '45px',
+                        height: '45px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        animation: isRecording ? 'pulse 1.5s infinite' : 'none'
+                    }}
+                >
+                    <Mic size={20} />
+                </button>
                 <textarea
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                    placeholder="Giải thích khái niệm bằng ngôn ngữ của bạn... (Enter để gửi, Shift+Enter xuống dòng)"
+                    placeholder={isRecording ? "Đang nghe... Nói đi bạn..." : "Giải thích khái niệm bằng ngôn ngữ của bạn... (Enter để gửi)"}
                     rows={3}
                     style={{
                         flex: 1,
@@ -233,6 +323,7 @@ const FeynmanMode = ({ onBack }) => {
                         border: 'none',
                         borderRadius: '12px',
                         padding: '0 20px',
+                        height: '45px',
                         cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
                         fontWeight: 'bold',
                         display: 'flex',

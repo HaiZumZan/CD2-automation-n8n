@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class StudyRequest {
     private String file_name;
     private String student_message; // null nếu là flashcard
+    private String persona;
 }

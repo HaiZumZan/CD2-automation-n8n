@@ -1,16 +1,17 @@
-import axiosClient from "../api/axiosClient"; // Dùng axiosClient xịn xò của bạn
+import axiosClient from "../api/axiosClient";
+import { ENDPOINTS } from "../constants/ApiEndpoints";
 
 export const getAllUsers = async () => {
   try {
-    const res = await axiosClient.get("/api/admin/users");
+    const res = await axiosClient.get(ENDPOINTS.ADMIN_USERS);
     return res.data;
   } catch (error) {
     console.error("Lỗi lấy danh sách user:", error);
-    return []; // Trả về mảng rỗng nếu chưa có API backend để UI không bị sập
+    return [];
   }
 };
 
 export const toggleUserLock = async (username) => {
-  const res = await axiosClient.put(`/api/admin/users/toggle-lock/${username}`);
+  const res = await axiosClient.put(`${ENDPOINTS.ADMIN_TOGGLE_LOCK}/${username}`);
   return res.data;
 };

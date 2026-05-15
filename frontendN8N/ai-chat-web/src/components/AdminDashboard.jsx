@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { uploadFile, getFiles, deleteFile } from "../services/fileService";
 import { getChatHistory } from "../services/chatService";
 import { getAllUsers, toggleUserLock } from "../services/adminService";
+import { registerUser } from "../services/authService";
 import {
   Users,
   FileText,
@@ -24,6 +25,12 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
+  // State cho phần Add User
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("USER");
+  const [isRegistering, setIsRegistering] = useState(false);
+
   // State cho phần Upload
   const [file, setFile] = useState(null);
   const [selectedFaculty, setSelectedFaculty] = useState("");
@@ -37,6 +44,8 @@ const AdminDashboard = () => {
         "Lập trình Java",
         "Cấu trúc dữ liệu",
         "Cơ sở dữ liệu",
+        "Tư tưởng Hồ Chí Minh",
+        "Triết học Mac-Lenin",
       ],
       "Trí tuệ nhân tạo": ["Machine Learning", "Python cơ bản"],
     },
@@ -91,7 +100,8 @@ const AdminDashboard = () => {
       setSelectedSubject("");
       setActiveAdminTab("dashboard");
     } catch (error) {
-      alert("❌ Có lỗi xảy ra khi tải tài liệu lên.");
+      const errorMsg = error.response?.data || "Có lỗi xảy ra khi tải tài liệu lên.";
+      alert(`❌ ${errorMsg}`);
     } finally {
       setIsUploading(false);
     }
@@ -133,6 +143,30 @@ const AdminDashboard = () => {
       }
     }
   };
+
+  const handleRegisterUser = async (e) => {
+    e.preventDefault();
+    if (!newUsername || !newPassword) {
+      alert("Vui lòng nhập tên tài khoản và mật khẩu!");
+      return;
+    }
+    setIsRegistering(true);
+    try {
+      await registerUser(newUsername, newPassword, newRole);
+      alert("✅ Thêm người dùng thành công!");
+      setNewUsername("");
+      setNewPassword("");
+      setNewRole("USER");
+      // Tải lại danh sách
+      const data = await getAllUsers();
+      setUsers(data || []);
+    } catch (error) {
+      alert("❌ " + (error.response?.data || "Lỗi khi tạo tài khoản."));
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   // --- STYLE CHUNG ---
   const containerStyle = {
     padding: "30px",
@@ -629,130 +663,188 @@ const AdminDashboard = () => {
                   )}
                 </tbody>
               </table>
-              {/* TAB 4: QUẢN LÝ NGƯỜI DÙNG */}
-              {activeAdminTab === "users" && (
-                <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-                  <div
-                    style={{
-                      padding: "20px",
-                      borderBottom: "1px solid #444",
-                      backgroundColor: "#1e1e26",
-                    }}
-                  >
-                    <h2 style={{ margin: 0, fontSize: "16px" }}>
-                      👥 Danh sách Tài khoản
+            </div>
+          )}
+
+          {/* TAB 4: QUẢN LÝ NGƯỜI DÙNG */}
+          {activeAdminTab === "users" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  
+                  {/* Form thêm người dùng */}
+                  <div style={cardStyle}>
+                    <h2 style={{ margin: "0 0 15px 0", fontSize: "16px", color: "#4dd0e1", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Users size={20} /> Thêm người dùng mới
                     </h2>
+                    <form onSubmit={handleRegisterUser} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "15px", alignItems: "end" }}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "5px", color: "#888", fontSize: "13px" }}>Tên đăng nhập</label>
+                        <input
+                          type="text"
+                          value={newUsername}
+                          onChange={(e) => setNewUsername(e.target.value)}
+                          placeholder="Nhập username"
+                          style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", backgroundColor: "rgba(0,0,0,0.2)", color: "#fff", outline: "none" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "5px", color: "#888", fontSize: "13px" }}>Mật khẩu</label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Nhập mật khẩu"
+                          style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", backgroundColor: "rgba(0,0,0,0.2)", color: "#fff", outline: "none" }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "5px", color: "#888", fontSize: "13px" }}>Vai trò (Role)</label>
+                        <select
+                          value={newRole}
+                          onChange={(e) => setNewRole(e.target.value)}
+                          style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", backgroundColor: "rgba(0,0,0,0.2)", color: "#fff", outline: "none" }}
+                        >
+                          <option value="USER">Người dùng (Sinh viên)</option>
+                          <option value="ADMIN">Quản trị viên (Admin)</option>
+                        </select>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isRegistering}
+                        style={{
+                          backgroundColor: "var(--accent-color)",
+                          color: "#000",
+                          padding: "10px 20px",
+                          borderRadius: "8px",
+                          border: "none",
+                          fontWeight: "600",
+                          cursor: isRegistering ? "not-allowed" : "pointer",
+                          height: "40px",
+                          transition: "all 0.2s"
+                        }}
+                        className="search-btn-hover"
+                      >
+                        {isRegistering ? "Đang xử lý..." : "Tạo tài khoản"}
+                      </button>
+                    </form>
                   </div>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ backgroundColor: "#252530" }}>
-                        <th style={tableHeaderStyle}>USERNAME</th>
-                        <th style={tableHeaderStyle}>QUYỀN (ROLE)</th>
-                        <th style={tableHeaderStyle}>TRẠNG THÁI</th>
-                        <th style={{ ...tableHeaderStyle, textAlign: "right" }}>
-                          HÀNH ĐỘNG
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((u) => (
-                        <tr key={u.id || u.username}>
-                          <td
-                            style={{
-                              ...tableCellStyle,
-                              color: "#fff",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {u.username}
-                          </td>
-                          <td style={tableCellStyle}>
-                            <span
+
+                  {/* Bảng danh sách người dùng */}
+                  <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+                    <div
+                      style={{
+                        padding: "20px",
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        backgroundColor: "rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      <h2 style={{ margin: 0, fontSize: "16px", color: "#fff" }}>
+                        Danh sách Tài khoản Hệ thống
+                      </h2>
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "#252530" }}>
+                          <th style={tableHeaderStyle}>USERNAME</th>
+                          <th style={tableHeaderStyle}>QUYỀN (ROLE)</th>
+                          <th style={tableHeaderStyle}>TRẠNG THÁI</th>
+                          <th style={{ ...tableHeaderStyle, textAlign: "right" }}>
+                            HÀNH ĐỘNG
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((u) => (
+                          <tr key={u.id || u.username} className="table-row-hover" style={{ transition: "background-color 0.2s" }}>
+                            <td
                               style={{
-                                backgroundColor: u.role?.includes("ADMIN")
-                                  ? "#ffb86c20"
-                                  : "#4a90e220",
-                                color: u.role?.includes("ADMIN")
-                                  ? "#ffb86c"
-                                  : "#4a90e2",
-                                padding: "4px 8px",
-                                borderRadius: "4px",
-                                fontSize: "12px",
+                                ...tableCellStyle,
+                                color: "#fff",
                                 fontWeight: "bold",
                               }}
                             >
-                              {u.role || "USER"}
-                            </span>
-                          </td>
-                          <td style={tableCellStyle}>
-                            <span
+                              {u.username}
+                            </td>
+                            <td style={tableCellStyle}>
+                              <span
+                                style={{
+                                  backgroundColor: u.role?.includes("ADMIN")
+                                    ? "rgba(255, 184, 108, 0.15)"
+                                    : "rgba(74, 144, 226, 0.15)",
+                                  color: u.role?.includes("ADMIN")
+                                    ? "#ffb86c"
+                                    : "#4dd0e1",
+                                  padding: "6px 10px",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  border: `1px solid ${u.role?.includes("ADMIN") ? "rgba(255, 184, 108, 0.3)" : "rgba(74, 144, 226, 0.3)"}`
+                                }}
+                              >
+                                {u.role || "USER"}
+                              </span>
+                            </td>
+                            <td style={tableCellStyle}>
+                              <span
+                                style={{
+                                  color:
+                                    u.enabled !== false ? "#50fa7b" : "#ff6b6b",
+                                  fontWeight: "500"
+                                }}
+                              >
+                                {u.enabled !== false ? "Hoạt động" : "Đã bị khóa"}
+                              </span>
+                            </td>
+                            <td style={{ ...tableCellStyle, textAlign: "right" }}>
+                              {u.role?.includes("ADMIN") ? (
+                                <button
+                                  className="icon-action-btn"
+                                  style={{
+                                    cursor: "not-allowed",
+                                    opacity: 0.5
+                                  }}
+                                  title="Không thể khóa Admin gốc"
+                                >
+                                  <Shield size={16} />
+                                </button>
+                              ) : (
+                                <button
+                                  className={`icon-action-btn ${u.enabled !== false ? 'delete' : 'view'}`}
+                                  onClick={() => handleToggleLock(u.username)}
+                                  title={
+                                    u.enabled !== false
+                                      ? "Khóa tài khoản"
+                                      : "Mở khóa tài khoản"
+                                  }
+                                >
+                                  {u.enabled !== false ? (
+                                    <Lock size={16} />
+                                  ) : (
+                                    <Unlock size={16} />
+                                  )}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {users.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan="4"
                               style={{
-                                color:
-                                  u.enabled !== false ? "#50fa7b" : "#ff6b6b",
+                                textAlign: "center",
+                                padding: "30px",
+                                color: "#888",
                               }}
                             >
-                              {u.enabled !== false ? "Hoạt động" : "Đã bị khóa"}
-                            </span>
-                          </td>
-                          <td style={{ ...tableCellStyle, textAlign: "right" }}>
-                            {u.role?.includes("ADMIN") ? (
-                              <button
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  color: "#888",
-                                  cursor: "not-allowed",
-                                }}
-                                title="Không thể khóa Admin"
-                              >
-                                <Shield size={18} />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleToggleLock(u.username)}
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  color:
-                                    u.enabled !== false ? "#ffb86c" : "#50fa7b",
-                                  cursor: "pointer",
-                                }}
-                                title={
-                                  u.enabled !== false
-                                    ? "Khóa tài khoản"
-                                    : "Mở khóa tài khoản"
-                                }
-                              >
-                                {u.enabled !== false ? (
-                                  <Lock size={18} />
-                                ) : (
-                                  <Unlock size={18} />
-                                )}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      {users.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan="4"
-                            style={{
-                              textAlign: "center",
-                              padding: "20px",
-                              color: "#888",
-                            }}
-                          >
-                            Chưa có dữ liệu người dùng.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                              Chưa có dữ liệu người dùng.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
-            </div>
-          )}
         </>
       )}
     </div>

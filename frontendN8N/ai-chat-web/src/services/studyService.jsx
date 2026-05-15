@@ -1,6 +1,12 @@
 import axiosClient from '../api/axiosClient';
 import { ENDPOINTS } from '../constants/ApiEndpoints';
 
+// Lấy danh sách file đã có flashcard
+export const getLearnedFiles = async () => {
+    const res = await axiosClient.get(ENDPOINTS.STUDY_FLASHCARD_LEARNED);
+    return Array.isArray(res.data) ? res.data : [];
+};
+
 // Gọi API tạo Flashcard
 export const generateFlashcards = async (fileName) => {
     const res = await axiosClient.post(ENDPOINTS.STUDY_FLASHCARD, {
@@ -16,10 +22,11 @@ export const generateFlashcards = async (fileName) => {
 };
 
 // Gọi API Feynman
-export const sendFeynmanMessage = async (fileName, studentMessage) => {
+export const sendFeynmanMessage = async (fileName, studentMessage, persona = "Giáo sư Đại học") => {
     const res = await axiosClient.post(ENDPOINTS.STUDY_FEYNMAN, {
         file_name: fileName,
-        student_message: studentMessage
+        student_message: studentMessage,
+        persona: persona
     });
     const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
     return data;
